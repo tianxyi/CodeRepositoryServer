@@ -1,0 +1,271 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>Sockets.h</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="WindowsHelpers.h.html">WindowsHelpers.h</a>
+      <a href="Utilities.h.html">Utilities.h</a>
+      <a href="Logger.h.html">Logger.h</a>
+      <a href="Sockets.cpp.html">Sockets.cpp</a>
+    </h3>#ifndef SOCKETS_H
+#define SOCKETS_H
+<div class="comments">/////////////////////////////////////////////////////////////////////////</div>
+<div class="comments">// Sockets.h - C++ wrapper for Win32 socket api                        //</div>
+<div class="comments">// ver 5.2                                                             //</div>
+<div class="comments">// Jim Fawcett, CSE687 - Object Oriented Design, Spring 2016           //</div>
+<div class="comments">// CST 4-187, Syracuse University, 315 443-3948, jfawcett@twcny.rr.com //</div>
+<div class="comments">//---------------------------------------------------------------------//</div>
+<div class="comments">// Jim Fawcett (c) copyright 2015                                      //</div>
+<div class="comments">// All rights granted provided this copyright notice is retained       //</div>
+<div class="comments">//---------------------------------------------------------------------//</div>
+<div class="comments">// Application: OOD Project #4                                         //</div>
+<div class="comments">// Platform:    Visual Studio 2015, Dell XPS 8900, Windows 10 pro      //</div>
+<div class="comments">/////////////////////////////////////////////////////////////////////////</div>
+<div class="comments">/*
+*  Package Operations:
+*  -------------------
+*  Provides four classes that wrap the Winsock API(WSA):
+*  Socket:
+*  - provides all the functionality necessary to handle server /clients
+*  - created by SocketListener after accepting a request
+*  - usually passed to a client handling thread<div class="comments">// thread for handling client request!!!!!!!!!!!!</div>
+
+*  SocketConnecter:
+*  - adds the ability to connect to a server
+
+*  SocketListener:
+*  - adds the ability to listen for connections on a dedicated thread
+*  - instances of this class are the only ones influenced by ipVer().
+*    clients will use whatever protocol the server provides.
+
+*  SocketSystem:
+*  - Loads and unloads winsock2 library.  
+*  - Declared once at beginning of execution
+*
+
+/*
+* ToDo:
+* - make SocketSystem a reference counted instance of Socket
+* - write buffered recv which efficiently returns string or line
+*   - reads and concatenates everything available into circular buffer
+*   - parses out first string or line and moves start of buffer pointer
+*     to begining of next
+* -----------------------------------------------------------------------
+*  Wait for The next items until Students have submitted their code
+* -----------------------------------------------------------------------
+* - build front end, e.g., Sender and Receiver classes!!!!
+* - implement message facility: message class, sendMsg and recvMsg
+* - Test and Display packages
+*/</div>
+
+#ifndef WIN32_LEAN_AND_MEAN  <div class="comments">// prevents duplicate includes of core parts of windows.h in winsock2.h</div>
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#include &lt;Windows.h&gt;      <div class="comments">// Windnows API</div>
+#include &lt;winsock2.h&gt;     <div class="comments">// Windows sockets, ver 2</div>
+#include &lt;WS2tcpip.h&gt;     <div class="comments">// support for IPv6 and other things</div>
+#include &lt;IPHlpApi.h&gt;     <div class="comments">// ip helpers</div>
+
+#include &lt;vector&gt;
+#include &lt;string&gt;
+#include &lt;atomic&gt;
+
+#include "../WindowsHelpers/WindowsHelpers.h"
+#include "../Utilities/Utilities.h"
+#include "../Logger/Logger.h"
+
+#pragma warning(disable:4522)
+#pragma comment(lib, "Ws2_32.lib")
+
+namespace Sockets
+{
+
+  <div class="comments">/////////////////////////////////////////////////////////////////////////////</div>
+  <div class="comments">// SocketSystem class - manages loading and unloading Winsock library</div>
+
+  class SocketSystem
+  <div class ="classes">{
+  public:
+    SocketSystem();<div class="comments">//WSAStartup();</div>
+    ~SocketSystem();<div class="comments">//WSACleanup();</div>
+  private:
+    int iResult;
+    WSADATA wsaData;<div class="comments">//Windows Socket API</div>
+  };
+</div>
+  <div class="comments">/////////////////////////////////////////////////////////////////////////////</div>
+  <div class="comments">// Socket class</div>
+  <div class="comments">// - used by server for client handling!!</div>
+  <div class="comments">// - base for SocketConnecter and SocketListener classes</div>
+
+  class Socket
+  <div class ="classes">{
+  public:
+    enum IpVer { IP4, IP6 };
+    using byte = char;
+
+    <div class="comments">// disable copy construction and assignment</div>
+    Socket(const Socket& s) = delete;
+    Socket& operator=(const Socket& s) = delete;
+
+    Socket(IpVer ipver = IP4);<div class="comments">//ipver</div>
+    Socket(::SOCKET);<div class="comments">//?</div>
+    Socket(Socket&& s);<div class="comments">//move constructor</div>
+    operator ::SOCKET() <div class ="function">{ return socket_; }<div class="comments">//?</div></div>
+    Socket& operator=(Socket&& s);<div class="comments">//move operator</div>
+    virtual ~Socket();
+
+    IpVer& ipVer();
+    bool send(size_t bytes, byte* buffer);
+    bool recv(size_t bytes, byte* buffer);
+    size_t sendStream(size_t bytes, byte* buffer);
+    size_t recvStream(size_t bytes, byte* buffer);
+    bool sendString(const std::string& str, byte terminator = '\0');
+    std::string recvString(byte terminator = '\0');
+    static std::string removeTerminator(const std::string& src);
+    size_t bytesWaiting();
+    bool waitForData(size_t timeToWait, size_t timeToCheck);
+    bool shutDownSend();
+    bool shutDownRecv();
+    bool shutDown();
+    void close();
+
+    bool validState() <div class ="function">{ return socket_ != INVALID_SOCKET; }</div>
+
+  protected:
+    WSADATA wsaData;
+    ::SOCKET socket_;<div class="comments">//?(SOCKET	=	UINT_PTR)</div>
+    struct addrinfo *result = NULL, *ptr = NULL, hints;<div class="comments">//!!!!</div>
+    int iResult;
+    IpVer ipver_ = IP4;
+  };
+</div>
+  <div class="comments">/////////////////////////////////////////////////////////////////////////////</div>
+  <div class="comments">// SocketConnecter class</div>
+  <div class="comments">// - supports connecting to a SocketListener</div>
+
+  class SocketConnecter : public Socket
+  <div class ="classes">{
+  public:
+    SocketConnecter(const SocketConnecter& s) = delete;
+    SocketConnecter& operator=(const SocketConnecter& s) = delete;
+
+    SocketConnecter();<div class="comments">//default constructor</div>
+    SocketConnecter(SocketConnecter&& s);<div class="comments">//move constructor</div>
+    SocketConnecter& operator=(SocketConnecter&& s);<div class="comments">//move assignment</div>
+    virtual ~SocketConnecter();
+
+    bool connect(const std::string& ip, size_t port);
+  };
+</div>
+  <div class="comments">/////////////////////////////////////////////////////////////////////////////</div>
+  <div class="comments">// SocketListener class!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!</div>
+  <div class="comments">// - listens for incoming connections</div>
+  <div class="comments">// - each connection is handled on its own thread!!!!!!!!!!!!!!!!!!!!1</div>
+
+  class SocketListener : public Socket
+  <div class ="classes">{
+  public:
+    SocketListener(const SocketListener& s) = delete;
+    SocketListener& operator=(const SocketListener& s) = delete;
+
+    SocketListener(size_t port, IpVer ipv = IP6);<div class="comments">//bool connect(const std::string& ip, size_t port);</div>
+    SocketListener(SocketListener&& s);
+    SocketListener& operator=(SocketListener&& s);
+
+    virtual ~SocketListener();
+
+    template&lt;typename CallObj&gt;
+    bool start(CallObj& co);<div class="comments">//!!!!!!!!!!!!!!</div>
+
+    void stop();
+  private:
+    bool bind();
+    bool listen();
+    Socket accept();
+    std::atomic&lt;bool&gt; stop_ = false;
+    size_t port_;<div class="comments">//qqqqqqqqqqqqqqqq</div>
+    bool acceptFailed_ = false;
+  };
+</div>
+  <div class="comments">//----&lt; SocketListener start function runs listener on its own thread &gt;------</div>
+  <div class="comments">/*
+  *  - Accepts Callable Object that defines the operations
+  *    to handle client requests.        <div class="comments">// callable object is client handle</div>
+  *  - You will find an example Callable Object, ClientProc,!!!!!!!!!!!!!!!!!!
+  *    used in the test stub below
+  */</div>
+  template&lt;typename CallObj&gt;<div class="comments">//what is start mean??</div>
+  bool SocketListener::start(CallObj& co)<div class="comments">//template generic socket  -whyit is template </div>
+	  <div class="comments">//Callobject ----</div>
+  <div class ="function">{
+    if (!bind())
+    {
+      return false;
+    }
+
+    if (!listen())
+    {
+      return false;
+    }
+
+    <div class="comments">// listen on a dedicated thread so server's main thread won't block</div>
+
+    std::thread ListenThread(<div class="comments">//ListenThreadStart</div>
+
+      [&]()<div class="comments">//capture waht?</div>
+    {
+      StaticLogger&lt;1&gt;::write("\n  -- server waiting for connection");
+
+      while (!acceptFailed_)
+      {
+        if (stop_.load())
+          break;
+
+        <div class="comments">// Accept a client socket - blocking call!!!!!!!</div>
+
+        Socket clientSocket = accept();    <div class="comments">// uses move ctor! block connection until </div>
+        if (!clientSocket.validState()) {
+          continue;
+        }
+        StaticLogger&lt;1&gt;::write("\n  -- server accepted connection");
+
+        <div class="comments">// start thread to handle client request</div>
+
+        <div class="comments">//std::thread clientThread(std::ref(co), std::move(clientSocket));</div>
+        std::thread clientThread(co, std::move(clientSocket));<div class="comments">//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!transfer ownership of socket</div>
+        clientThread.detach();  <div class="comments">// detach - listener won't access thread again</div>
+
+
+      }
+      StaticLogger&lt;1&gt;::write("\n  -- Listen thread stopping");
+    }
+		<div class="comments">//ListenThreadEnd</div>
+							);
+    ListenThread.detach();
+    return true;
+  }</div>
+}
+#endif
+
+    </pre>
+  </body>
+</html>

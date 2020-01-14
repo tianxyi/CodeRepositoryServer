@@ -1,0 +1,99 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>Properties.h</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="Properties.cpp.html">Properties.cpp</a>
+    </h3>#pragma once
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">// Properties.h - provides getter and setter methods               //</div>
+<div class="comments">// ver 1.1                                                         //</div>
+<div class="comments">// Jim Fawcett, CSE687 - Object Oriented Design, Fall 2018         //</div>
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">/*
+*  Package Operations:
+*  -------------------
+*  This package provides a single Property&lt;T&gt; class that provides
+*  getter and setter methods and backing store T t_ using the property 
+*  name.
+*  - Here's an example:
+*      Property&lt;int&gt; intProp;
+*      intProp(42)    Sets its internal store to 42
+*      intProp()      returns the internal store value
+*  - So one declaration creates two methods with simple syntax, using
+*    the property's instance name. 
+*  - The getter and setter methods are virtual, so you can override
+*    them to provide logic that constraints getting and setting.
+*  - Property also provides the method ref() which returns a reference
+*    to the underlying stored value.  That lets us call member functions
+*    directly on the stored type.  However, that lets users bypass
+*    setter logic, so use it with caution.
+*
+*  Required Files:
+*  ---------------
+*  Properties.h
+*
+*  Maintenance History:
+*  --------------------
+*  ver 1.1 : 30 Jan 2019
+*  - added ref()
+*  ver 1.0 : 11 Oct 2018
+*  - first release
+*/</div>
+namespace Utilities
+{
+  template &lt;typename T&gt;
+  class Property
+  <div class ="classes">{
+  public:
+    virtual ~Property() <div class ="function">{}</div>
+
+    <div class="comments">//----&lt; setter assigns the state of t to the internal store &gt;----</div>
+
+    virtual void operator()(const T& t)
+    <div class ="function">{
+      t_ = t;
+    }</div>
+    <div class="comments">//----&lt; getter returns the value of the internal store &gt;---------</div>
+    <div class="comments">/*
+    *  - Return by value is used so that clients cannot change the
+    *    internal store without using setter.
+    */</div>
+    virtual T operator()()
+    <div class ="function">{
+      return t_;
+    }</div>
+    <div class="comments">//----&lt; getter that returns reference &gt;--------------------------</div>
+    <div class="comments">/*
+    *  - Allows us to call member function on stored type
+    *  - Note that this allows a user to bypass any logic
+    *    in setter.
+    */</div>
+    virtual T& ref()
+    <div class ="function">{
+      return t_;
+    }</div>
+  private:
+    T t_;
+  };
+}</div>
+    </pre>
+  </body>
+</html>

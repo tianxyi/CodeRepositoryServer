@@ -1,0 +1,99 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>UnitTest.cpp</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="UnitTest.h.html">UnitTest.h</a>
+    </h3><div class="comments">///////////////////////////////////////////////////////////////</div>
+<div class="comments">// UnitTest.cpp - Demonstrate unit testing framework         //</div>
+<div class="comments">// ver 1.1                                                   //</div>
+<div class="comments">// --------------------------------------------------------- //</div>
+<div class="comments">// copyright © Jim Fawcett, 2012, 2013                       //</div>
+<div class="comments">// All rights granted provided that this notice is retained  //</div>
+<div class="comments">// --------------------------------------------------------- //</div>
+<div class="comments">// Jim Fawcett, CSE687-Object Oriented Design, Spring 2013   //</div>
+<div class="comments">///////////////////////////////////////////////////////////////</div>
+<div class="comments">/*
+ * This is what a test class should look like:
+ */</div>
+#include "UnitTest.h"
+#include &lt;string&gt;
+#include &lt;iostream&gt;
+using namespace Test;
+
+ class TestStdStringClass : public TestBase&lt;TestStdStringClass&gt;
+ <div class ="classes">{
+ public:
+   bool TestConstruction()
+   <div class ="function">{
+     bool t1, t2;
+     std::string s1("this is a string");
+     t1 = (s1 == "this is a string");
+     std::string s2;
+     t2 = (s2.size() == 0);
+     return checkResult(t1 && t2, "TestConstruction");
+   }</div>
+   bool TestCopy()
+   <div class ="function">{
+     bool t1;
+     std::string orig = "a string";
+     std::string copy = orig;
+     t1 = (copy == orig && &copy != &orig);
+     return checkResult(t1, "TestCopy");
+   }</div>
+   bool TestWillThrowStdException()
+   <div class ="function">{
+     throw std::exception("TestWillThrowStdException");
+     return true;
+   }</div>
+   bool TestWillThrowStructuredException()
+   <div class ="function">{
+     int x=1, y=0;
+     x = x/y;
+     return true;
+   }</div>
+   bool test()  <div class="comments">// overriding inherited test method</div>
+   <div class ="function">{
+     bool t1, t2, t3, t4;
+     t1 = doTest(&TestStdStringClass::TestConstruction);
+     t2 = doTest(&TestStdStringClass::TestCopy);
+     t3 = doTest(&TestStdStringClass::TestWillThrowStdException);
+     t4 = doTest(&TestStdStringClass::TestWillThrowStructuredException);
+     return t1 && t2 && !t3 && !t4;
+   }</div>
+ private:
+   <div class="comments">// save here data needed in more than one test </div>
+ };
+#ifdef TEST_UNITTEST</div>
+int main()
+<div class ="function">{
+  Title("Demonstrating UnitTest Package");
+
+  TestStdStringClass test;
+  if(test.test())
+    std::cout &lt;&lt; "\n  all tests passed";
+  else
+    std::cout &lt;&lt; "\n  one or more tests failed";
+  std::cout &lt;&lt; "\n\n";
+}</div>
+#endif
+    </pre>
+  </body>
+</html>

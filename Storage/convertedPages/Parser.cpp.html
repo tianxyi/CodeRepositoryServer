@@ -1,0 +1,200 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>Parser.cpp</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="Utilities.h.html">Utilities.h</a>
+      <a href="Toker.h.html">Toker.h</a>
+      <a href="Semi.h.html">Semi.h</a>
+      <a href="Parser.h.html">Parser.h</a>
+      <a href="ActionsAndRules.h.html">ActionsAndRules.h</a>
+      <a href="ConfigureParser.h.html">ConfigureParser.h</a>
+      <a href="FileSystem.h.html">FileSystem.h</a>
+    </h3><div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">//  Parser.cpp - Analyzes C++ and C# language constructs           //</div>
+<div class="comments">//  ver 1.0                                                        //</div>
+<div class="comments">//  Language:      Visual C++, Visual Studio 2015                  //</div>
+<div class="comments">//  Platform:      Dell XPS 8920, Windows 10                       //</div>
+<div class="comments">//  Application:   Prototype for CSE687 - OOD Projects             //</div>
+<div class="comments">//  Author:        Jim Fawcett, CST 4-187, Syracuse University     //</div>
+<div class="comments">//                 (315) 443-3948, jfawcett@twcny.rr.com           //</div>
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+
+#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include "../Utilities/Utilities.h"
+#include "../Tokenizer/Toker.h"
+#include "../SemiExpression/Semi.h"
+#include "Parser.h"
+#include "ActionsAndRules.h"
+#include "ConfigureParser.h"
+
+<div class="comments">//using namespace CodeAnalysis;</div>
+using namespace Lexer;
+using namespace Utilities;
+using Demo = Logging::StaticLogger&lt;1&gt;;
+
+namespace CodeAnalysis {
+
+  <div class="comments">//----&lt; register parsing rule &gt;--------------------------------</div>
+
+  void Parser::addRule(IRule* pRule)
+  <div class ="function">{
+    rules.push_back(pRule);
+  }</div>
+  <div class="comments">//----&lt; get next ITokenCollection &gt;------------------------------</div>
+
+  bool Parser::next()
+  <div class ="function">{
+    bool succeeded = pTokColl-&gt;get();
+    if (!succeeded)
+    {
+      return false;
+    }
+
+    pTokColl-&gt;trim();
+
+    return true;
+  }</div>
+
+  <div class="comments">//----&lt; parse the Semi by applying all rules to it &gt;--------</div>
+
+  bool Parser::parse()
+  <div class ="function">{
+    for (size_t i = 0; i &lt; rules.size(); ++i)
+    {
+      bool doWhat = rules[i]-&gt;doTest(pTokColl);
+      if (doWhat == IRule::Stop)
+        break;
+    }
+    return true;
+  }</div>
+  <div class="comments">//----&lt; register action with a rule &gt;--------------------------</div>
+
+  void IRule::addAction(IAction *pAction)
+  <div class ="function">{
+    actions.push_back(pAction);
+  }</div>
+  <div class="comments">//----&lt; invoke all actions associated with a rule &gt;------------</div>
+
+  void IRule::doActions(const Lexer::ITokenCollection* pTokColl)
+  <div class ="function">{
+    if (actions.size() &gt; 0)
+      for (size_t i = 0; i &lt; actions.size(); ++i)
+        actions[i]-&gt;doAction(pTokColl);
+  }</div>
+
+  <div class="comments">//----&lt; test stub &gt;--------------------------------------------</div>
+}
+
+#ifdef TEST_PARSER
+
+#include "../FileSystem/FileSystem.h"
+#include &lt;queue&gt;
+#include &lt;string&gt;
+#define Util StringHelper
+
+using namespace CodeAnalysis;
+
+int main(int argc, char* argv[])
+<div class ="function">{
+  Util::Title("Testing Parser Class");
+  putline();
+
+  <div class="comments">// Analyzing files, named on the command line</div>
+
+  if(argc &lt; 2)
+  {
+    std::cout 
+      &lt;&lt; "\n  please enter name of file to process on command line\n\n";
+    return 1;
+  }
+
+  std::string fileSpec;
+
+  for(int i=1; i&lt;argc; ++i)  <div class="comments">// iterate over files</div>
+  {
+    fileSpec = FileSystem::Path::getFullFileSpec(argv[i]);
+    std::string msg = "Processing file" + fileSpec;
+    Util::title(msg);
+
+    ConfigParseForCodeAnal configure;
+    Parser* pParser = configure.Build();
+
+    std::string name;
+
+    try
+    {
+      if(pParser)
+      {
+        name = FileSystem::Path::getName(argv[i]);
+        if(!configure.Attach(fileSpec))
+        {
+          std::cout &lt;&lt; "\n  could not open file " &lt;&lt; name &lt;&lt; std::endl;
+          continue;
+        }
+      }
+      else
+      {
+        std::cout &lt;&lt; "\n\n  Parser not built\n\n";
+        return 1;
+      }
+
+      <div class="comments">// save current package name</div>
+
+      Repository* pRepo = Repository::getInstance();
+      pRepo-&gt;package() = name;
+
+      <div class="comments">// parse the package</div>
+
+      while (pParser-&gt;next())
+      {
+        pParser-&gt;parse();
+      }
+      std::cout &lt;&lt; "\n";
+
+      <div class="comments">// final AST operations</div>
+      ASTNode* pGlobalScope = pRepo-&gt;getGlobalScope();
+
+      <div class="comments">// walk AST, computing complexity for each node</div>
+      <div class="comments">// and record in AST node's element</div>
+
+      complexityEval(pGlobalScope);
+      
+      <div class="comments">// Walk AST, displaying each element, indented</div>
+      <div class="comments">// by generation</div>
+
+      TreeWalk(pGlobalScope);
+    }
+    catch(std::exception& ex)
+    {
+      std::cout &lt;&lt; "\n\n    " &lt;&lt; ex.what() &lt;&lt; "\n\n";
+      std::cout &lt;&lt; "\n  exception caught at line " &lt;&lt; __LINE__ &lt;&lt; " ";
+      std::cout &lt;&lt; "\n  in package \"" &lt;&lt; name &lt;&lt; "\"";
+    }
+    std::cout &lt;&lt; "\n";
+  }
+  std::cout &lt;&lt; "\n";
+}</div>
+
+#endif
+    </pre>
+  </body>
+</html>

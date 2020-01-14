@@ -1,0 +1,356 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>Executive.cpp</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="Utilities.h.html">Utilities.h</a>
+      <a href="Toker.h.html">Toker.h</a>
+      <a href="Semi.h.html">Semi.h</a>
+      <a href="Parser.h.html">Parser.h</a>
+      <a href="ActionsAndRules.h.html">ActionsAndRules.h</a>
+      <a href="ConfigureParser.h.html">ConfigureParser.h</a>
+      <a href="Executive.h.html">Executive.h</a>
+      <a href="CodeUtilities.h.html">CodeUtilities.h</a>
+      <a href="DirExplorerN.h.html">DirExplorerN.h</a>
+      <a href="Convert.h.html">Convert.h</a>
+      <a href="Process.h.html">Process.h</a>
+      <a href="FileSystem.h.html">FileSystem.h</a>
+    </h3><div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">//  Executive.cpp - Starter code for Project #2                    //</div>
+<div class="comments">//  ver 1.0                                                        //</div>
+<div class="comments">//  Language:      Visual C++, Visual Studio 2015                  //</div>
+<div class="comments">//  Platform:      Dell XPS 8920, Windows 10                       //</div>
+<div class="comments">//  Application:   Prototype for CSE687 - OOD Projects             //</div>
+<div class="comments">//  Author:        Jim Fawcett, CST 4-187, Syracuse University     //</div>
+<div class="comments">//                 (315) 443-3948, jfawcett@twcny.rr.com           //</div>
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+
+#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include "../Utilities/Utilities.h"
+#include "../Tokenizer/Toker.h"
+#include "../SemiExpression/Semi.h"
+#include "Parser.h"
+#include "ActionsAndRules.h"
+#include "ConfigureParser.h"
+#include "Executive.h"
+
+#include "../CodeUtilities/CodeUtilities.h"
+#include "../DirExplorer-Naive/DirExplorerN.h"
+#include "../Convert/Convert.h"
+#include"../Process/Process.h"
+
+#include&lt;Windows.h&gt;
+using namespace Lexer;
+using namespace Utilities;
+using Demo = Logging::StaticLogger&lt;1&gt;;
+
+#include "../FileSystem/FileSystem.h"
+#include &lt;map&gt;
+#include &lt;string&gt;
+#define Util StringHelper
+
+using namespace CodeAnalysis;
+using namespace FileSystem;
+
+int main(int argc, char* argv[])
+<div class ="function">{
+  Util::Title("Testing Project2Starter");
+  putline();
+
+  <div class="comments">// Analyzing files, named on the command line</div>
+
+  if (argc &lt; 2)
+  {
+    std::cout
+      &lt;&lt; "\n  please enter name of file to process on command line\n\n";
+    return 1;
+  }
+  ProcessCmdLine pcl(argc, argv);
+  std::cout &lt;&lt; "\n\n";
+  <div class="comments">//temp co("comment.txt");</div>
+  <div class="comments">//co.showtemp();</div>
+  std::cout &lt;&lt; "\n";
+  Util::title("Accept a path and regular expression from command line");
+  std::cout &lt;&lt; "\n";
+
+  std::cout &lt;&lt; "Path: ";
+  pcl.showPath();
+  std::cout &lt;&lt; "\n";
+  std::cout &lt;&lt; "Regular expression: ";
+  pcl.showRegexes();
+
+  std::cout &lt;&lt; "\n";
+
+  if (pcl.parseError())
+  {
+	  pcl.usage();
+	  std::cout &lt;&lt; "\n\n";
+	  return 1;
+  }
+  std::cout &lt;&lt; std::endl;
+  Util::title("Find file to process using DirExplorerN");
+
+  std::cout &lt;&lt; std::endl;
+  DirExplorerN de(pcl.path());
+  for (auto patt : pcl.patterns())
+  {
+	  de.addPattern(patt);
+  }
+
+  if (pcl.hasOption('s'))
+  {
+	  de.recurse();
+  }
+
+  de.search();
+  de.showStats();
+
+  std::cout &lt;&lt; "\n\n";
+  de.showfind();
+  std::vector&lt;std::string&gt; V;<div class="comments">//files</div>
+  de.copyname(V);
+
+
+  std::cout &lt;&lt; std::endl;
+
+  std::vector&lt;std::string&gt; V0;<div class="comments">//files that mache regex</div>
+
+  std::vector&lt;std::string&gt; reg = pcl.regexes();
+
+
+  std::regex pattern(reg[0]);
+
+  for (size_t i = 0; i &lt; V.size(); i++) {
+	  if (std::regex_match(Path::getName(V[i]), pattern)) {
+		  V0.push_back(V[i]);
+
+	  }
+  }
+  Util::title("If no matches found");
+  std::cout &lt;&lt; "\n";
+  std::cout &lt;&lt; "vector&lt;string&gt; V stores the matched file name, if its size = 0, shall write an Error message  " &lt;&lt; std::endl;
+
+  if (V0.size() == 0) {
+	  std::cout &lt;&lt; "Error: no  matches be found!";
+	  getchar();
+	  getchar();
+	  return 0;
+  }
+  std::cout &lt;&lt; std::endl;
+  Util::title("Matched file using regex");
+
+  std::string fileSpec;
+  std::cout &lt;&lt; std::endl;
+  std::unordered_map&lt;std::string, std::vector&lt;std::string&gt;&gt; table;
+  std::map&lt;std::string, std::map&lt;size_t, size_t&gt;&gt; classlist;
+  std::map&lt;std::string, std::map&lt;size_t, size_t&gt;&gt; funclist;
+
+  for (size_t i = 0; i &lt; V0.size(); i++) {<div class="comments">//parse</div>
+
+	  std::map&lt;size_t, size_t&gt; mapc;
+	  std::map&lt;size_t, size_t&gt; mapf;
+	  fileSpec = V0[i];
+	  ConfigParseForCodeAnal configure;
+	  Parser* pParser = configure.Build();
+
+	  std::string name;
+	  
+	  try
+	  {
+		  if (pParser)
+		  {
+			  name = FileSystem::Path::getName(fileSpec);
+			  if (!configure.Attach(fileSpec))
+			  {
+				  std::cout &lt;&lt; "\n  could not open file " &lt;&lt; name &lt;&lt; std::endl;
+				  continue;
+			  }
+		  }
+		  else
+		  {
+			  std::cout &lt;&lt; "\n\n  Parser not built\n\n";
+			  return 1;
+
+		  }
+		  Repository* pRepo = Repository::getInstance();
+		  pRepo-&gt;package() = name;
+
+		  <div class="comments">// parse the package</div>
+
+		  while (pParser-&gt;next())
+		  {
+			  pParser-&gt;parse();
+		  }
+		  std::cout &lt;&lt; "\n";
+
+		  <div class="comments">// final AST operations</div>
+
+		  ASTNode* pGlobalScope = pRepo-&gt;getGlobalScope();
+
+
+		  std::vector&lt;std::string&gt; VA;
+
+		  auto iter2 = pGlobalScope-&gt;statements_.begin();
+		  while (iter2 != pGlobalScope-&gt;statements_.end()) {
+			
+			  if ((*iter2)-&gt;size() &gt; 2) {
+				  if (((*(*iter2))[2]).find('"') != std::string::npos) {
+					  
+					  std::string text = ((*(*iter2))[2]);
+				
+					  text.erase(
+						  std::remove(text.begin(), text.end(), '\"'), text.end());
+					  VA.push_back(Path::getFullFileSpec(text));
+				  }
+
+			  }
+			  ++iter2;
+		  }
+	
+		  table.emplace(fileSpec, VA);
+
+		  <div class="comments">// walk AST, computing complexity for each node</div>
+		  <div class="comments">// and record in AST node's element</div>
+
+		  complexityEval(pGlobalScope);
+
+		  <div class="comments">// Walk AST, displaying each element, indented</div>
+		  <div class="comments">// by generation</div>
+
+		  TreeWalk(pGlobalScope,mapc,mapf);
+
+
+	  }
+	  catch (std::exception& ex)
+	  {
+		  std::cout &lt;&lt; "\n\n    " &lt;&lt; ex.what() &lt;&lt; "\n\n";
+		  std::cout &lt;&lt; "\n  exception caught at line " &lt;&lt; __LINE__ &lt;&lt; " ";
+		  std::cout &lt;&lt; "\n  in package \"" &lt;&lt; name &lt;&lt; "\"";
+	  }
+	  std::cout &lt;&lt; "\n";
+	  classlist.emplace(name, mapc);
+	  funclist.emplace(name, mapf);
+
+  }
+  auto it1 = table.begin();
+  while (it1 != table.end()) {
+	  std::cout &lt;&lt; "\n";
+
+	  std::cout &lt;&lt; it1-&gt;first&lt;&lt;"\n";
+	  auto it2 = (it1-&gt;second).begin();
+	  while (it2 != (it1-&gt;second).end()) {
+		  std::cout &lt;&lt; "--"&lt;&lt;*it2&lt;&lt;"\n";
+		  it2++;
+	  }
+	  it1++;
+  }
+  
+	  auto it3 = table.begin();
+  while (it3 != table.end()) {
+
+
+
+	  if (it3-&gt;first.back() == 'h') {
+
+		  std::string dptcy = it3-&gt;first;
+		  dptcy.pop_back();
+		  it3-&gt;second.push_back(dptcy + "cpp");
+	  }
+
+
+	  it3++;
+  }
+
+  int has = 0;
+  auto its = table.begin();
+  while (its!= table.end()) {
+	  std::vector&lt;std::string&gt; Vv;
+	  for (size_t i = 0; i &lt; its-&gt;second.size(); i++) {
+		  std::string file = its-&gt;second[i];
+
+		  for (size_t j = 0; j &lt; V.size(); j++) {
+			  if (Path::getName(file) == Path::getName(V[j]) ) {
+				  has = 1; break;
+			  }
+		  }
+
+		  if (has == 1) {
+			  Vv.push_back(file);
+			  has = 0;
+		  }
+	  }
+	  table[its-&gt;first] = Vv;
+	  its++;
+  }
+
+
+  std::cout &lt;&lt; "-------------------------" &lt;&lt; "\n";
+
+
+  for (size_t i = 0; i &lt; V0.size(); i++) {
+	 
+	  std::string namea = Path::getName(V0[i]);
+	  Convert c(V0[i]);
+	  c.setDepTable(table[V0[i]]);
+	  c.setClasses(classlist[namea]);
+	  c.setFunction(funclist[namea]);
+	  c.convertFile();
+  }
+
+  Process p;
+  p.title("test application");
+  std::string appPath = "C:/Program Files/Mozilla Firefox/firefox.exe";  // path to application to start
+  p.application(appPath);<div class="comments">//C:/Users/tianx/Desktop/cse687/proj1/ </div>
+
+
+
+  std::cout &lt;&lt; "\n  Will start notepad " &lt;&lt; V0.size() &lt;&lt; " times and each time wait for termination.";
+  std::cout &lt;&lt; "\n  You need to kill each window (upper right button) to continue.";
+
+  for (size_t i = 0; i &lt; V0.size(); ++i)
+  {
+	  <div class="comments">//std::string cmd1 = "/A ../Executive/";</div>
+	  <div class="comments">//std::string cmd1="/A ../Executive/convertedPages/";//what is A mean?</div>
+	  std::string cmd1 = "/A \\convertedPages\\" + FileSystem::Path::getName(V0[i]) + ".html";
+	  std::cout &lt;&lt; std::endl &lt;&lt; "PATH:::";
+	  std::cout &lt;&lt; cmd1 &lt;&lt; std::endl;
+
+	  std::cout &lt;&lt; "\n  starting process: \"" &lt;&lt; appPath &lt;&lt; "\"";
+	  std::cout &lt;&lt; "\n  with this cmdlne: \"" &lt;&lt; cmd1 &lt;&lt; "\"";
+	  p.create();
+	  CBP callback = []() { std::cout &lt;&lt; "\n  --- child process exited with this message ---"; };
+	  p.setCallBackProcessing(callback);
+	  p.registerCallback();
+
+	  WaitForSingleObject(p.getProcessHandle(), INFINITE);  <div class="comments">// wait for created process to terminate</div>
+  }
+
+  std::cout &lt;&lt; "\n  after OnExit";
+  std::cout.flush();
+  char ch;
+  std::cin.read(&ch, 1);
+ <div class="comments">// return 0;</div>
+
+}</div>
+
+    </pre>
+  </body>
+</html>

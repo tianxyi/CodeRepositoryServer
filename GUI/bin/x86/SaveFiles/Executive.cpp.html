@@ -1,0 +1,418 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>Executive.cpp</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="Utilities.h.html">Utilities.h</a>
+      <a href="Toker.h.html">Toker.h</a>
+      <a href="Semi.h.html">Semi.h</a>
+      <a href="Parser.h.html">Parser.h</a>
+      <a href="ActionsAndRules.h.html">ActionsAndRules.h</a>
+      <a href="ConfigureParser.h.html">ConfigureParser.h</a>
+      <a href="Executive.h.html">Executive.h</a>
+      <a href="CodeUtilities.h.html">CodeUtilities.h</a>
+      <a href="DirExplorerN.h.html">DirExplorerN.h</a>
+      <a href="Convert.h.html">Convert.h</a>
+      <a href="Process.h.html">Process.h</a>
+      <a href="FileSystem.h.html">FileSystem.h</a>
+    </h3><div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">//  Executive.cpp - CodePublisher for Project #2                    //</div>
+<div class="comments">//  ver 1.0                                                        //</div>
+<div class="comments">//  Language:      Visual C++, Visual Studio 2017                  //</div>
+<div class="comments">//  Platform:      Dell G5, Windows 10							   //</div>
+<div class="comments">//  Application:   Prototype for CSE687 - OOD Projects             //</div>
+<div class="comments">//  Author:        Tianxiang Yi, Syracuse University			   //</div>
+<div class="comments">//                 (315) 278-3890, tyi100@syr.edu		           //</div>
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+#define IN_DLL
+
+#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include "../Utilities/Utilities.h"
+#include "../Tokenizer/Toker.h"
+#include "../SemiExpression/Semi.h"
+#include "Parser.h"
+#include "ActionsAndRules.h"
+#include "ConfigureParser.h"
+#include "Executive.h"
+
+#include "../CodeUtilities/CodeUtilities.h"
+#include "../DirExplorer-Naive/DirExplorerN.h"
+#include "../Convert/Convert.h"
+#include"../Process/Process.h"
+
+#include&lt;Windows.h&gt;
+using namespace Lexer;
+using namespace Utilities;
+using Demo = Logging::StaticLogger&lt;1&gt;;
+
+#include "../FileSystem/FileSystem.h"
+#include &lt;map&gt;
+#include &lt;string&gt;
+#define Util StringHelper
+
+using namespace CodeAnalysis;
+using namespace FileSystem;
+
+<div class="comments">//----&lt; Publisher class   &gt;-----------------</div>
+class Publisher : public IPublisher <div class ="classes">{
+public:
+	virtual void setCmd() override;
+		
+	virtual void setcmdd(const std::vector&lt;std::string&gt;& argv) override;
+
+	virtual void show() override;
+
+	virtual void convert() override;
+
+	virtual std::vector&lt;std::string&gt; getConvertedFilesList() override;
+	
+	Publisher() <div class ="function">{};</div>
+
+	~Publisher() <div class ="function">{};</div>
+	
+	std::vector&lt;std::string&gt; matchregex(DirExplorerN &d, std::regex r);
+		
+	std::vector&lt;std::string&gt; getdlink(ASTNode* p);
+private:
+	std::vector&lt;std::string&gt; files_;
+	std::string path_;
+	std::vector&lt;std::string&gt; Patterns;
+	 std::vector&lt;int&gt; Options;
+	 std::vector&lt;std::string&gt; Regexes;
+};
+</div>
+IPublisher * PublisherFactory::createPublisher()
+<div class ="function">{
+	return new Publisher;
+}</div>
+
+<div class="comments">//----&lt; show vector content  &gt;-----------------</div>
+void show(const std::vector&lt;std::string&gt; &V) <div class ="function">{
+	for (size_t i = 0; i &lt; V.size(); i++) {
+
+		std::cout &lt;&lt; " " &lt;&lt; V[i] &lt;&lt; "\n";
+	}
+}</div>
+<div class="comments">//----&lt; get dependency link   &gt;-----------------</div>
+std::vector&lt;std::string&gt; getDpendencyLink(ASTNode* p) <div class ="function">{
+	std::vector&lt;std::string&gt; VD;
+	auto iter2 = p-&gt;statements_.begin();
+	while (iter2 != p-&gt;statements_.end()) {
+		if ((*iter2)-&gt;size() &gt; 2) {
+			if (((*(*iter2))[2]).find('"') != std::string::npos) {
+				std::string text = ((*(*iter2))[2]);
+				text.erase(
+					std::remove(text.begin(), text.end(), '\"'), text.end());
+				VD.push_back(Path::getFullFileSpec(text));
+			}
+		}
+		++iter2;
+	}
+	return VD;
+}</div>
+<div class="comments">//----&lt; demenstrate requirement 3 & 5   &gt;-----------------</div>
+std::vector&lt;std::string&gt; demoReq35( DirExplorerN &d,std::regex r) <div class ="function">{
+	d.search();
+	std::cout &lt;&lt; "\n";
+	d.showfind();
+	std::vector&lt;std::string&gt; Vmatch;
+	d.copyname(Vmatch);
+	std::cout &lt;&lt; std::endl;
+	std::vector&lt;std::string&gt; V0;
+
+	for (size_t i = 0; i &lt; Vmatch.size(); i++) {
+		if (std::regex_match(Path::getName(Vmatch[i]), r)) {
+			V0.push_back(Vmatch[i]);
+		}
+	}
+
+	Util::title(" Matching files to regexes - Available regexes: [A-B](.*)");
+	show(V0);
+	d.showStats();
+	return V0;
+	std::cout &lt;&lt; "\n";
+}</div>
+
+
+
+
+<div class="comments">//-----&lt; Set commandline  &gt;-------</div>
+void Publisher::setCmd()
+<div class ="function">{
+	int argc_ = 7;
+	char argv_[7][40] = { "D:\\test\\AmmarProject2Sol\\Debug" ,"..\\Storage","/s","/demo","*.h","*.cpp","[A-B](.*)" };//pppppppppppppppppp
+	path_ = argv_[1];
+	Options.clear();
+	Options.push_back(argv_[2][1]);
+	Patterns.clear();
+	Patterns.push_back(argv_[4]);
+	Patterns.push_back(argv_[5]);
+	Regexes.clear();
+	Regexes.push_back(argv_[6]);
+	
+}</div>
+<div class="comments">//-----&lt; Set commandline from GUI  &gt;-------</div>
+void Publisher::setcmdd(const std::vector&lt;std::string&gt;& argv)
+<div class ="function">{
+  char argv_[7][40] = { "D:\\test\\AmmarProject2Sol\\Debug" ,"..\\Storage","/s","/demo","*.h","*.cpp","[A-B](.*)" };
+	size_t argc = argv.size();
+	if (argc &lt; 1) {
+		std::cout &lt;&lt; "\n command line parse error";
+		return;
+	}
+	path_ = "..\\"+argv[0];
+  Regexes.clear();
+  Regexes.push_back(argv[1]);
+	Options.clear();
+  Options.push_back(argv_[2][1]);
+
+	Patterns.clear();
+  Patterns.push_back(argv_[4]);
+  Patterns.push_back(argv_[5]);
+
+}</div>
+<div class="comments">//-----&lt; Write to Console requirement I have done  &gt;-------</div>
+void Publisher::show()
+<div class ="function">{
+	Util::Title("Demonstrating Requirement  #3&#4 - Interface and Objectfactory");
+
+	std::cout &lt;&lt; "\n I have an interface named IPublisher for the Publisher developed in ";
+	std::cout &lt;&lt; "\n Project#2. It has three function setCmd(vector&lt;string&gt;), convert() and getConvertedFiles()";
+	std::cout &lt;&lt; "\n Publisher class is inherit from this Interface ";
+	std::cout &lt;&lt; "\n Also the object factory provided in this class named PublisherFactory ";
+	std::cout &lt;&lt; "\n which returns a pointer to the interface.";
+	std::cout &lt;&lt; "\n ";
+
+	Util::Title("Demonstrating Requirement  #5 - Translator and dynamiclibrary");
+	std::cout &lt;&lt; "\n Translator Package is available and it got ITranslator Interface and Translator class.";
+	std::cout &lt;&lt; "\n It is responsibled to delegate calls from the GUI into the publisher's method";
+	std::cout &lt;&lt; "\n The most important function of this package is mToN(List&lt;String&gt;) and nToM(vector&lt;string&gt;)";
+	std::cout &lt;&lt; "\n It is responsibled for transformation of the structure between native C++ code and managed code";
+	std::cout &lt;&lt; "\n ";
+
+	Util::Title("Demonstrating Requirement  #6 - Client WPFGUI");
+	std::cout &lt;&lt; "\n WPF GUI package is avialable";
+	std::cout &lt;&lt; "\n It got two views--'Navigation' to navigate and 'Converted Files' to display file conversion results";
+	std::cout &lt;&lt; "\n ";
+
+	Util::Title("Demonstrating Requirement  #7 - Automated test Unit");
+	std::cout &lt;&lt; "\n The default path is Project directory and it will automatically test";
+	std::cout &lt;&lt; "\n set default pattern:'*.h','*.cpp' and defualt regex[A-B](.*)";
+	std::cout &lt;&lt; "\n You could browse the directory and set path where you want to convert ";
+	std::cout &lt;&lt; "\n Also you could change the Pattern and press the Key Enter";
+	std::cout &lt;&lt; "\n Then it will automatically pop out the window to display view in GUI";
+}</div>
+
+<div class="comments">//-----&lt; Convert Files  &gt;-----------------------------------------------</div>
+void Publisher::convert()
+<div class ="function">{
+
+	DirExplorerN de(path_);
+	for (auto patt : Patterns)
+	{
+		de.addPattern(patt);
+	}
+	if (true)
+	{
+		de.recurse();
+	}
+	std::vector&lt;std::string&gt; reg = Regexes;
+	std::regex pattern(reg[0]);
+
+	std::vector&lt;std::string&gt; Dirfiles = matchregex(de, pattern);
+	std::string fileSpec;
+	std::unordered_map&lt;std::string, std::vector&lt;std::string&gt;&gt; table;
+
+	<div class="comments">//guide container to add &lt;div&gt; of class </div>
+
+	std::map&lt;std::string, std::map&lt;size_t, size_t&gt;&gt; classlist;
+
+	<div class="comments">//guide container to add &lt;div&gt; of function</div>
+
+	std::map&lt;std::string, std::map&lt;size_t, size_t&gt;&gt; funclist;
+
+	std::cout &lt;&lt; "Parsing file to displayed or hidden Function & Class bodies: \n";
+	for (size_t i = 0; i &lt; Dirfiles.size(); i++) {
+		std::map&lt;size_t, size_t&gt; mapc;
+		std::map&lt;size_t, size_t&gt; mapf;
+		fileSpec = Dirfiles[i];
+		ConfigParseForCodeAnal configure;
+		Parser* pParser = configure.Build();
+		std::string name;
+		try
+		{
+			if (pParser)
+			{
+				name = FileSystem::Path::getName(fileSpec);
+				if (!configure.Attach(fileSpec))
+				{
+					std::cout &lt;&lt; "\n  could not open file " &lt;&lt; name &lt;&lt; std::endl;
+					continue;
+				}
+			}
+			else
+			{
+				std::cout &lt;&lt; "\n\n  Parser not built\n\n";
+				return;
+
+			}
+			Repository* pRepo = Repository::getInstance();
+			pRepo-&gt;package() = name;
+			<div class="comments">// parse the package</div>
+			while (pParser-&gt;next())
+			{
+				pParser-&gt;parse();
+			}
+			std::cout &lt;&lt; "\n";
+			<div class="comments">// final AST operations</div>
+			ASTNode* pGlobalScope = pRepo-&gt;getGlobalScope();
+			table.emplace(fileSpec, getdlink(pGlobalScope));
+
+			complexityEval(pGlobalScope);
+
+			TreeWalk(pGlobalScope, mapc, mapf);
+
+			std::cout &lt;&lt; "-- Parsed:" &lt;&lt; name;
+		}
+		catch (std::exception& ex)
+		{
+			std::cout &lt;&lt; "\n\n    " &lt;&lt; ex.what() &lt;&lt; "\n\n";
+			std::cout &lt;&lt; "\n  exception caught at line " &lt;&lt; __LINE__ &lt;&lt; " ";
+			std::cout &lt;&lt; "\n  in package \"" &lt;&lt; name &lt;&lt; "\"";
+		}
+		std::cout &lt;&lt; "\n";
+		classlist.emplace(name, mapc);
+		funclist.emplace(name, mapf);
+
+	}
+	<div class="comments">//Add default Denpency link .h .cpp</div>
+	auto it3 = table.begin();
+	while (it3 != table.end()) {
+		if (it3-&gt;first.back() == 'h') {
+
+			std::string dptcy = it3-&gt;first;
+			dptcy.pop_back();
+			it3-&gt;second.push_back(dptcy + "cpp");
+		}
+		it3++;
+	}
+	<div class="comments">//Determine whether the Denpendency link exist</div>
+	int has = 0;
+	std::vector&lt;std::string&gt; matched = de.copyfind();
+	auto its = table.begin();
+	while (its != table.end()) {
+		std::vector&lt;std::string&gt; Vv;
+		for (size_t i = 0; i &lt; its-&gt;second.size(); i++) {
+			std::string file = its-&gt;second[i];
+
+			for (size_t j = 0; j &lt; matched.size(); j++) {
+				if (Path::getName(file) == Path::getName(matched[j])) {
+					has = 1; break;
+				}
+			}
+			if (has == 1) {
+				Vv.push_back(file);
+				has = 0;
+			}
+		}
+		table[its-&gt;first] = Vv;
+		its++;
+	}
+	std::cout &lt;&lt; "Converting file to webpage \n";
+	files_.clear();
+	<div class="comments">//convert file through package</div>
+	for (size_t i = 0; i &lt; Dirfiles.size(); i++) {
+
+		std::string namea = Path::getName(Dirfiles[i]);
+		Convert c(Dirfiles[i]);
+		c.setDepTable(table[Dirfiles[i]]);
+		c.setClasses(classlist[namea]);
+		c.setFunction(funclist[namea]);
+		c.convertFile();
+		std::string file_ = "..\\..\\convertedPages\\" + namea + ".html";<div class="comments">//???</div>
+		files_.push_back(Path::getFullFileSpec(file_));
+
+	}
+}</div>
+<div class="comments">//-----&lt; get Converted Files  &gt;-------</div>
+std::vector&lt;std::string&gt; Publisher::getConvertedFilesList()
+<div class ="function">{
+	return files_;
+}</div>
+<div class="comments">//-----&lt; find file that mached regex  &gt;-------</div>
+std::vector&lt;std::string&gt; Publisher::matchregex(DirExplorerN & d, std::regex r)
+<div class ="function">{
+	d.search();
+
+	std::vector&lt;std::string&gt; Vmatch;
+	d.copyname(Vmatch);
+	
+	std::vector&lt;std::string&gt; V0;
+
+	for (size_t i = 0; i &lt; Vmatch.size(); i++) {
+		if (std::regex_match(Path::getName(Vmatch[i]), r)) {
+			V0.push_back(Vmatch[i]);
+		}
+	}
+	return V0;
+}</div>
+
+<div class="comments">//-----&lt; get dependency link  &gt;-------</div>
+std::vector&lt;std::string&gt; Publisher::getdlink(ASTNode* p)
+<div class ="function">{
+
+	std::vector&lt;std::string&gt; VD;
+	auto iter2 = p-&gt;statements_.begin();
+	while (iter2 != p-&gt;statements_.end()) {
+		if ((*iter2)-&gt;size() &gt; 2) {
+			if (((*(*iter2))[2]).find('"') != std::string::npos) {
+				std::string text = ((*(*iter2))[2]);
+				text.erase(
+					std::remove(text.begin(), text.end(), '\"'), text.end());
+				VD.push_back(Path::getFullFileSpec(text));
+			}
+		}
+		++iter2;
+	}
+	return VD;
+}</div>
+
+
+#ifdef TEST_EXECUTIVE
+int main()
+<div class ="function">{
+
+	PublisherFactory factory;
+	IPublisher* pub = factory.createPublisher();
+	pub-&gt;setCmd();
+	pub-&gt;convert();
+	std::vector&lt;std::string&gt; files;
+	files = pub-&gt;getConvertedFilesList();
+	for (auto item : files) {
+		std::cout &lt;&lt; item &lt;&lt; "\n";
+	}
+	std::cout &lt;&lt; "Hello World!\n";
+}</div>
+#endif
+
+    </pre>
+  </body>
+</html>

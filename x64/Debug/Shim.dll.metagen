@@ -1,0 +1,31 @@
+ImageRuntimeVersion: v4.0.30319
+Assembly Shim, Version=0.0.*, Culture=Invariant Language (Invariant Country): 
+	hash=SHA1, flags=PublicKey
+Assembly mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Class ITranslator: AutoLayout, AnsiClass, Class, Public, Abstract, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Methods:
+    setCmd(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    setcmdd(List`1): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    show(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    convert(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+    getConvertedFilesList(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask, Abstract
+Class TranslatorFactory: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Methods:
+    createTranslator(): PrivateScope, Public, Static, HideBySig
+Class Translator: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :ITranslator
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    System.IDisposable
+  Methods:
+    setCmd(): PrivateScope, Public, Virtual, HideBySig
+    setcmdd(List`1): PrivateScope, Public, Virtual, HideBySig
+    show(): PrivateScope, Public, Virtual, HideBySig
+    convert(): PrivateScope, Public, Virtual, HideBySig
+    getConvertedFilesList(): PrivateScope, Public, Virtual, HideBySig
+    Dispose(): PrivateScope, Public, Final, Virtual, HideBySig

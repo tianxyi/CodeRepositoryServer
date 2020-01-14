@@ -1,0 +1,68 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>IFileMgr.h</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+#pragma once
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">// IFileMgr.h - interface for finding files matching specified     //</div>
+<div class="comments">//              patterns on a specified path                       //</div>
+<div class="comments">// ver 3.0                                                         //</div>
+<div class="comments">// Jim Fawcett, MidtermCodeSupplement, Spring 2016                 //</div>
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+
+#include &lt;string&gt;
+
+namespace FileManager
+{
+  struct IFileEventHandler
+  {
+    virtual void execute(const std::string& fileSpec) = 0;
+  };
+
+  struct IDirEventHandler
+  {
+    virtual void execute(const std::string& dirSpec) = 0;
+  };
+
+  struct IDoneEventHandler
+  {
+    virtual void execute(size_t numFilesProcessed) = 0;
+  };
+
+  struct IFileMgr
+  {
+    virtual ~IFileMgr() <div class ="function">{}</div>
+    virtual void addPattern(const std::string& patt) = 0;
+    virtual void search() = 0;
+    virtual void find(const std::string& path) = 0;
+    virtual void regForFiles(IFileEventHandler* pEventHandler) = 0;
+    virtual void regForDirs(IDirEventHandler* pEventHandler) = 0;
+    virtual void regForDone(IDoneEventHandler* pEventHandler) = 0;
+    static IFileMgr* getInstance();
+  };
+
+  struct FileMgrFactory
+  {
+    static IFileMgr* create(const std::string& path);
+  };
+}
+    </pre>
+  </body>
+</html>

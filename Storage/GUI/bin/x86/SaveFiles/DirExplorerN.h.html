@@ -1,0 +1,269 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>DirExplorerN.h</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="FileSystem.h.html">FileSystem.h</a>
+      <a href="DirExplorerN.cpp.html">DirExplorerN.cpp</a>
+    </h3>#pragma once
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">// DirExplorerN.h - Naive directory explorer                       //</div>
+<div class="comments">// ver 1.3                                                         //</div>
+<div class="comments">// Jim Fawcett, CSE687 - Object Oriented Design, Fall 2018         //</div>
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">/*
+ * Package Operations:
+ * -------------------
+ * DirExplorerN provides a class, of the same name, that executes a
+ * depth first search of a directory tree rooted at a specified path.
+ * Each time it enters a directory, it invokes its member function
+ * doDir, and for every file in that directory, it invokes doFile.
+ *
+ * We call this a "Naive Directory Explorer" because, while it carries
+ * out its assigned responsibilities well, there is no way to change
+ * what its doDir and doFile functions do, without changing the class
+ * itself.  It would be much better to provide a mechanism to allow
+ * a using application to supply this processing without changing
+ * the Directory Navigator.
+ *
+ * Other projects in the DirectoryNavigator folder in Repository/Cpp
+   do just that, in different ways.
+
+ * - DirExplorer-Naive (this project):
+ *     Implements basic processing well, but applications have to
+ *     change its code to affect how files and directories are
+ *     handled.
+ * - DirExplorer-Template:
+ *     Applications provide template class parameters to define file
+ *     and directory processing.
+ * - DirExplorer-Inheritance:
+ *     Applications subclass DirExplorerI, overriding virtual functions
+ *     doFile, doDir, and doQuit to define how files and directories
+ *     are handled, and whether processing should terminate before
+ *     visiting all directories.
+ * - DirExplorer-Events:
+ *     Applications use Event Interfaces, published by DirExplorerE,
+ *     by subscribing event-handler functions, and control terminate
+ *      processing using a plug-in interface.
+ * - DirExplorer-Provider:
+ *     Applications implement a file system provider that implements
+ *     a Provider interface published by DirExplorerP.
+ *
+ * We'll be using the Repository/Cpp solution to illustrate techniques
+ * for building flexible software.
+ *
+ * Required Files:
+ * ---------------
+ * DirExplorerN.h, DirExplorerN.cpp
+ * FileSystem.h, FileSystem.cpp      <div class="comments">// Directory and Path classes</div>
+ * StringUtilities.h                 <div class="comments">// Title function</div>
+ * CodeUtilities.h                   <div class="comments">// ProcessCmdLine class</div>
+ *
+ * Maintenance History:
+ * --------------------
+ * ver 1.4 : 24 Jan 2019
+ * - Removed all projects except those needed for DirExplorerN.
+ * ver 1.3 : 19 Aug 2018
+ * - Removed some options to make this version simple.  Those are
+ *   implemented in the more advanced navigators, presented here.
+ * ver 1.2 : 17 Aug 2018
+ * - Moved method definitions to inlines, below the class declaration.
+ * ver 1.1 : 16 Aug 2018
+ * - Made no recursion default, added option /s for recursion.
+ * ver 1.0 : 11 Aug 2018
+ * - first release
+ *
+*/</div>
+#include &lt;vector&gt;
+#include &lt;iostream&gt;
+#include "../FileSystem/FileSystem.h"
+
+namespace FileSystem
+{
+	class DirExplorerN
+	<div class ="classes">{
+	public:
+		using patterns = std::vector&lt;std::string&gt;;
+
+		static std::string version() <div class ="function">{ return "ver 1.3"; }</div>
+
+		DirExplorerN(const std::string& path);
+
+		<div class="comments">// set options for analysis</div>
+		void showfind();<div class="comments">//addddddddddd</div>
+		void copyname(std::vector&lt;std::string&gt; &V);<div class="comments">//addd</div>
+		std::vector&lt;std::string&gt; copyfind();
+
+
+		void addPattern(const std::string& patt);
+		void recurse(bool doRecurse = true);
+
+		<div class="comments">// conduct depth first search</div>
+
+		void search();
+		void find(const std::string& path, std::vector&lt;std::string&gt; &v1);
+
+		<div class="comments">// define what happens when a file or dir is encountered</div>
+
+		void doFile(const std::string& filename);
+		void doDir(const std::string& dirname);
+
+		<div class="comments">// extract traversal statistics </div>
+
+		size_t fileCount();
+		size_t dirCount();
+		void showStats();
+
+	private:
+		std::string path_;
+		patterns patterns_;
+		size_t dirCount_ = 0;
+		size_t fileCount_ = 0;
+		std::vector&lt;std::string&gt; v1;<div class="comments">//add</div>
+
+		bool recurse_ = false;
+	};
+</div>
+	<div class="comments">//----&lt; construct DirExplorerN instance with default pattern &gt;-----</div>
+
+	inline DirExplorerN::DirExplorerN(const std::string& path) : path_(path)
+	<div class ="function">{
+		patterns_.push_back("*.*");
+	}</div>
+	<div class="comments">//----&lt; add specified patterns for selecting file names &gt;----------</div>
+
+	inline void DirExplorerN::addPattern(const std::string& patt)
+	<div class ="function">{
+		if (patterns_.size() == 1 && patterns_[0] == "*.*")
+			patterns_.pop_back();
+		patterns_.push_back(patt);
+	}</div>
+	<div class="comments">//----&lt; set option to recusively walk dir tree &gt;-------------------</div>
+
+	inline void DirExplorerN::recurse(bool doRecurse)
+	<div class ="function">{
+		recurse_ = doRecurse;
+	}</div>
+	<div class="comments">//----&lt; start Depth First Search at path held in path_ &gt;-----------</div>
+
+	inline void DirExplorerN::search()
+	<div class ="function">{
+		find(path_, v1);
+	}</div>
+	<div class="comments">//----&lt; search for directories and their files &gt;-------------------</div>
+	<div class="comments">/*
+	  Recursively finds all the dirs and files on the specified path,
+	  executing doDir when entering a directory and doFile when finding a file
+	*/</div>
+	inline void DirExplorerN::find(const std::string& path, std::vector&lt;std::string&gt; &v1)
+	<div class ="function">{
+		<div class="comments">// show current directory</div>
+
+		std::string fpath = FileSystem::Path::getFullFileSpec(path);
+		doDir(fpath);
+
+		for (auto patt : patterns_)
+		{
+			std::vector&lt;std::string&gt; files = FileSystem::Directory::getFiles(fpath, patt);
+			for (auto f : files)
+			{
+				doFile(f);
+				v1.push_back(FileSystem::Path::fileSpec(fpath, f));<div class="comments">// show each file in current directory</div>
+
+			}
+		}
+
+		std::vector&lt;std::string&gt; dirs = FileSystem::Directory::getDirectories(fpath);
+		for (auto d : dirs)
+		{
+			if (d == "." || d == "..")
+				continue;
+			std::string dpath = fpath + "\\" + d;
+			if (recurse_)
+			{
+				find(dpath, v1);   <div class="comments">// recurse into subdirectories</div>
+			}
+			else
+			{
+				doDir(dpath);  <div class="comments">// show subdirectories</div>
+			}
+		}
+	}</div>
+	<div class="comments">//----&lt; an application changes to enable specific file ops &gt;-------</div>
+
+	inline void DirExplorerN::doFile(const std::string& filename)
+	<div class ="function">{
+		++fileCount_;
+		<div class="comments">//std::cout &lt;&lt; "\n  --   " &lt;&lt; filename;</div>
+	}</div>
+	<div class="comments">//----&lt; an application changes to enable specific dir ops &gt;--------</div>
+
+	inline void DirExplorerN::doDir(const std::string& dirname)
+	<div class ="function">{
+		++dirCount_;
+		<div class="comments">//std::cout &lt;&lt; "\n  ++ " &lt;&lt; dirname;</div>
+	}</div>
+	<div class="comments">//----&lt; return number of files processed &gt;-------------------------</div>
+
+	inline size_t DirExplorerN::fileCount()
+	<div class ="function">{
+		return fileCount_;
+	}</div>
+	<div class="comments">//----&lt; return number of directories processed &gt;-------------------</div>
+
+	inline size_t DirExplorerN::dirCount()
+	<div class ="function">{
+		return dirCount_;
+	}</div>
+	<div class="comments">//----&lt; show final counts for files and dirs &gt;---------------------</div>
+
+	inline void DirExplorerN::showStats()
+	<div class ="function">{
+		std::cout &lt;&lt; "\n\n  processed " &lt;&lt; fileCount_ &lt;&lt; " files in " &lt;&lt; dirCount_ &lt;&lt; " directories";
+	}</div>
+	inline void DirExplorerN::showfind() <div class ="function">{
+		auto it1 = v1.begin();
+		while (it1 != v1.end()) {
+			std::cout &lt;&lt; *it1 &lt;&lt; std::endl;
+			it1++;
+		}
+
+	}</div>
+	inline void DirExplorerN::copyname(std::vector&lt;std::string&gt; &V) <div class ="function">{
+		auto it1 = v1.begin();
+		while (it1 != v1.end()) {
+			V.push_back(*it1);
+			it1++;
+		}
+
+	}</div>
+
+	inline std::vector&lt;std::string&gt; DirExplorerN::copyfind()
+	<div class ="function">{
+		return v1;
+	}</div>
+
+
+
+}
+
+    </pre>
+  </body>
+</html>

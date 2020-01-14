@@ -1,0 +1,334 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>Executive.cpp</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="Utilities.h.html">Utilities.h</a>
+      <a href="Toker.h.html">Toker.h</a>
+      <a href="Semi.h.html">Semi.h</a>
+      <a href="Parser.h.html">Parser.h</a>
+      <a href="ActionsAndRules.h.html">ActionsAndRules.h</a>
+      <a href="ConfigureParser.h.html">ConfigureParser.h</a>
+      <a href="Executive.h.html">Executive.h</a>
+      <a href="CodeUtilities.h.html">CodeUtilities.h</a>
+      <a href="DirExplorerN.h.html">DirExplorerN.h</a>
+      <a href="Convert.h.html">Convert.h</a>
+      <a href="Process.h.html">Process.h</a>
+      <a href="FileSystem.h.html">FileSystem.h</a>
+    </h3><div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">//  Executive.cpp - CodePublisher for Project #2                    //</div>
+<div class="comments">//  ver 1.0                                                        //</div>
+<div class="comments">//  Language:      Visual C++, Visual Studio 2017                  //</div>
+<div class="comments">//  Platform:      Dell G5, Windows 10							   //</div>
+<div class="comments">//  Application:   Prototype for CSE687 - OOD Projects             //</div>
+<div class="comments">//  Author:        Tianxiang Yi, Syracuse University			   //</div>
+<div class="comments">//                 (315) 278-3890, tyi100@syr.edu		           //</div>
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+
+#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include "../Utilities/Utilities.h"
+#include "../Tokenizer/Toker.h"
+#include "../SemiExpression/Semi.h"
+#include "Parser.h"
+#include "ActionsAndRules.h"
+#include "ConfigureParser.h"
+#include "Executive.h"
+
+#include "../CodeUtilities/CodeUtilities.h"
+#include "../DirExplorer-Naive/DirExplorerN.h"
+#include "../Convert/Convert.h"
+#include"../Process/Process.h"
+
+#include&lt;Windows.h&gt;
+using namespace Lexer;
+using namespace Utilities;
+using Demo = Logging::StaticLogger&lt;1&gt;;
+
+#include "../FileSystem/FileSystem.h"
+#include &lt;map&gt;
+#include &lt;string&gt;
+#define Util StringHelper
+
+using namespace CodeAnalysis;
+using namespace FileSystem;
+
+<div class="comments">//----&lt; show vector content  &gt;-----------------</div>
+void show(const std::vector&lt;std::string&gt; &V) <div class ="function">{
+	for (size_t i = 0; i &lt; V.size(); i++) {
+
+		std::cout &lt;&lt; " " &lt;&lt; V[i] &lt;&lt; "\n";
+	}
+}</div>
+<div class="comments">//----&lt; get dependency link   &gt;-----------------</div>
+std::vector&lt;std::string&gt; getDpendencyLink(ASTNode* p) <div class ="function">{
+	std::vector&lt;std::string&gt; VD;<div class="comments">//file that include dependency</div>
+	auto iter2 = p-&gt;statements_.begin();
+	while (iter2 != p-&gt;statements_.end()) {
+		if ((*iter2)-&gt;size() &gt; 2) {
+			if (((*(*iter2))[2]).find('"') != std::string::npos) {
+				std::string text = ((*(*iter2))[2]);
+				text.erase(
+					std::remove(text.begin(), text.end(), '\"'), text.end());
+				VD.push_back(Path::getFullFileSpec(text));
+			}
+		}
+		++iter2;
+	}
+	return VD;
+}</div>
+<div class="comments">//----&lt; demenstrate requirement 3 & 5   &gt;-----------------</div>
+std::vector&lt;std::string&gt; demoReq35( DirExplorerN &d,std::regex r) <div class ="function">{
+	d.search();
+	std::cout &lt;&lt; "\n";
+	d.showfind();
+	std::vector&lt;std::string&gt; Vmatch;
+	d.copyname(Vmatch);
+	std::cout &lt;&lt; std::endl;
+	std::vector&lt;std::string&gt; V0;
+
+	for (size_t i = 0; i &lt; Vmatch.size(); i++) {
+		if (std::regex_match(Path::getName(Vmatch[i]), r)) {
+			V0.push_back(Vmatch[i]);
+		}
+	}
+
+	Util::title(" Matching files to regexes - Available regexes: [A-B](.*)");
+	show(V0);
+	d.showStats();
+	return V0;
+	std::cout &lt;&lt; "\n";
+}</div>
+<div class="comments">//----&lt; demenstrate requirement 9   &gt;-----------------</div>
+void demoReq9(const std::vector&lt;std::string&gt; &V) <div class ="function">{
+	Process p;
+
+	<div class="comments">// path to application to start</div>
+
+	std::string appPath = "C:/Program Files/Mozilla Firefox/firefox.exe";  
+	p.application(appPath);
+
+	for (size_t i = 0; i &lt; V.size(); ++i)
+	{
+		std::string cmd1 = "/A ..\\..\\convertedPages\\" + FileSystem::Path::getName(V[i]) + ".html";
+
+		p.commandLine(cmd1);
+		p.create();
+		CBP callback = []() { std::cout &lt;&lt; "\n  --- child broweser exited with this message ---"; };
+		p.setCallBackProcessing(callback);
+		p.registerCallback();
+
+		WaitForSingleObject(p.getProcessHandle(), INFINITE);  <div class="comments">// wait for created process to terminate</div>
+	}
+	std::cout &lt;&lt; "\n";
+	Util::Title("Demonstrating Requirement  #9 - Automated Test Unit");
+	std::cout &lt;&lt; "\n  This is the automated test unit. ";
+	std::cout &lt;&lt; "\n\n All Requirements met. ";
+}</div>
+
+ProcessCmdLine::Usage customUsage()
+<div class ="function">{
+	std::string usage;
+	usage += "\n  Command Line: path [/option]* [/pattern] [/regex]*";
+	usage += "\n    path is relative or absolute path where processing begins";
+	usage += "\n    [/option]* are one or more options of the form:";
+	usage += "\n      /s - walk directory recursively";
+	usage += "\n    [pattern]* are one or more pattern strings of the form:";
+	usage += "\n      *.h *.cpp *.cs *.txt or *.*";
+	usage += "\n    [regex] regular expression(s), i.e. [A-B](.*)";
+	usage += "\n";
+	return usage;
+}</div>
+
+
+
+int main(int argc, char* argv[])
+<div class ="function">{
+  Util::Title("Demonstrating Requirement  #4 - Packages");
+  std::cout &lt;&lt; "\n Executive & Convert & Dependencies packages are available.";
+  std::cout &lt;&lt; "\n Loader package was replaced with DirExplorerN";
+  std::cout &lt;&lt; "\n Display package was implemented in Convert package";
+  putline();
+
+  <div class="comments">// Analyzing files, named on the command line</div>
+  
+  Util::Title("Demonstrating Requirement  #3 & #5 - Command line arguments");
+  std::cout &lt;&lt; customUsage();
+  if (argc &lt; 2)
+  {
+    std::cout
+      &lt;&lt; "\n  please enter name of file to process on command line\n\n";
+    return 1;
+  }
+
+  ProcessCmdLine pcl(argc, argv);
+
+  Util::title(" Files found matching patterns:");
+  std::cout &lt;&lt; std::endl;
+  
+  DirExplorerN de(pcl.path());
+  
+  for (auto patt : pcl.patterns())
+  {
+	  de.addPattern(patt);
+  }
+  if (pcl.hasOption('s'))
+  {
+	  de.recurse();
+  }
+  std::vector&lt;std::string&gt; reg = pcl.regexes();
+  std::regex pattern(reg[0]);
+  std::vector&lt;std::string&gt; Dirfiles= demoReq35(de, pattern);
+  
+  <div class="comments">//demenstrate requirement 6 & 7 & 8;</div>
+
+  Util::Title("Demonstrating Requirement  #6 & #7 & #8 - Convert, Add Dependencies & Display");
+  std::string fileSpec;
+  std::cout &lt;&lt; std::endl;
+
+  <div class="comments">//Dependency table guding to add dependency link</div>
+
+  std::unordered_map&lt;std::string, std::vector&lt;std::string&gt;&gt; table;
+
+  <div class="comments">//guide container to add &lt;div&gt; of class </div>
+
+  std::map&lt;std::string, std::map&lt;size_t, size_t&gt;&gt; classlist;
+
+  <div class="comments">//guide container to add &lt;div&gt; of function</div>
+
+  std::map&lt;std::string, std::map&lt;size_t, size_t&gt;&gt; funclist;
+
+  std::cout &lt;&lt; "Parsing file to displayed or hidden Function & Class bodies: \n";
+  for (size_t i = 0; i &lt; Dirfiles.size(); i++) {
+	  std::map&lt;size_t, size_t&gt; mapc;
+	  std::map&lt;size_t, size_t&gt; mapf;
+	  fileSpec = Dirfiles[i];
+	  ConfigParseForCodeAnal configure;
+	  Parser* pParser = configure.Build();
+	  std::string name;
+	  try
+	  {
+		  if (pParser)
+		  {
+			  name = FileSystem::Path::getName(fileSpec);
+			  if (!configure.Attach(fileSpec))
+			  {
+				  std::cout &lt;&lt; "\n  could not open file " &lt;&lt; name &lt;&lt; std::endl;
+				  continue;
+			  }
+		  }
+		  else
+		  {
+			  std::cout &lt;&lt; "\n\n  Parser not built\n\n";
+			  return 1;
+
+		  }
+		  Repository* pRepo = Repository::getInstance();
+		  pRepo-&gt;package() = name;
+		  <div class="comments">// parse the package</div>
+		  while (pParser-&gt;next())
+		  {
+			  pParser-&gt;parse();
+		  }
+		  std::cout &lt;&lt; "\n";
+		  <div class="comments">// final AST operations</div>
+		  ASTNode* pGlobalScope = pRepo-&gt;getGlobalScope();
+		  table.emplace(fileSpec, getDpendencyLink(pGlobalScope));
+		  <div class="comments">// walk AST, computing complexity for each node</div>
+		  <div class="comments">// and record in AST node's element</div>
+		  complexityEval(pGlobalScope);
+		  <div class="comments">// Walk AST, displaying each element, indented</div>
+		  <div class="comments">// by generation</div>
+		  TreeWalk(pGlobalScope,mapc,mapf);
+		  
+		  std::cout &lt;&lt; "-- Parsed:" &lt;&lt; name  ;
+	  }
+	  catch (std::exception& ex)
+	  {
+		  std::cout &lt;&lt; "\n\n    " &lt;&lt; ex.what() &lt;&lt; "\n\n";
+		  std::cout &lt;&lt; "\n  exception caught at line " &lt;&lt; __LINE__ &lt;&lt; " ";
+		  std::cout &lt;&lt; "\n  in package \"" &lt;&lt; name &lt;&lt; "\"";
+	  }
+	  std::cout &lt;&lt; "\n";
+	  classlist.emplace(name, mapc);
+	  funclist.emplace(name, mapf);
+
+  }
+
+  <div class="comments">//Add default Denpency link .h .cpp</div>
+	  auto it3 = table.begin();
+  while (it3 != table.end()) {
+	  if (it3-&gt;first.back() == 'h') {
+
+		  std::string dptcy = it3-&gt;first;
+		  dptcy.pop_back();
+		  it3-&gt;second.push_back(dptcy + "cpp");
+	  }
+	  it3++;
+  }
+
+  <div class="comments">//Determine whether the Denpendency link exist</div>
+
+  int has = 0;
+  std::vector&lt;std::string&gt; matched = de.copyfind();
+  auto its = table.begin();
+  while (its!= table.end()) {
+	  std::vector&lt;std::string&gt; Vv;
+	  for (size_t i = 0; i &lt; its-&gt;second.size(); i++) {
+		  std::string file = its-&gt;second[i];
+
+		  for (size_t j = 0; j &lt; matched.size(); j++) {
+			  if (Path::getName(file) == Path::getName(matched[j]) ) {
+				  has = 1; break;
+			  }
+		  }
+
+		  if (has == 1) {
+			  Vv.push_back(file);
+			  has = 0;
+		  }
+	  }
+	  table[its-&gt;first] = Vv;
+	  its++;
+  }
+
+  <div class="comments">//Convert file</div>
+
+  std::cout &lt;&lt; "Converting file to webpage \n";
+  for (size_t i = 0; i &lt; Dirfiles.size(); i++) {
+	 
+	  std::string namea = Path::getName(Dirfiles[i]);
+	  Convert c(Dirfiles[i]);
+	  c.setDepTable(table[Dirfiles[i]]);
+	  c.setClasses(classlist[namea]);
+	  c.setFunction(funclist[namea]);
+	  c.convertFile();
+  }
+  demoReq9(Dirfiles);
+  getchar();
+  getchar();
+  
+ <div class="comments">// return 0;</div>
+
+}</div>
+
+    </pre>
+  </body>
+</html>

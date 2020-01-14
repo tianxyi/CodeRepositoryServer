@@ -1,0 +1,16 @@
+Notes.txt
+================================================
+I created this Project2Starter project by:
+1. made a copy of Parser folder using Windows Explorer
+2. renamed the project files (vcxproj, vcxproj.filers, vcxproj.user)
+   from Parser to Project2Starter
+3. Renamed the solution folder from CppParser to Project2Starter
+4. Renamed the solution from CppParser.sln to Project2Starter.sln
+5. Opened Project2Starter in Visual Studio by double-clicking on sln file
+6. Added Executive.h and Executive.cpp to Project2Starter project
+7. Copied Parser.cpp's main into Executive's main
+8. Did not copy the #ifdef TEST_PARSER nor did I supply one for Executive
+9. Copied the include files from top of Parser.cpp to the top of Executive.cpp
+10. Provided Prologues for Executive.h and Executive.cpp
+11. Included Executive.h in Executive.cpp 
+    - for now, Executive.h doesn't have any contents.

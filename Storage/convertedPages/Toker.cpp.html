@@ -1,0 +1,685 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>Toker.cpp</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="Toker.h.html">Toker.h</a>
+    </h3><div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">// Toker.cpp - Collects words from a stream                        //</div>
+<div class="comments">// ver 1.1                                                         //</div>
+<div class="comments">// Jim Fawcett, CSE687 - Object Oriented Design, Spring 2019       //</div>
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+
+#include &lt;iostream&gt;
+#include &lt;iomanip&gt;
+#include &lt;string&gt;
+#include "Toker.h"
+
+namespace Lexer
+{
+
+  TokenContext* ITokenState::pContext_;  <div class="comments">// derived classes store context ref here</div>
+  
+  void ITokenState::setContext(TokenContext* pContext)
+  <div class ="function">{
+    pContext_ = pContext;
+  }</div>
+
+  TokenContext::TokenContext()
+  <div class ="function">{
+    pWhiteSpaceState_ = new WhiteSpaceState();
+    pAlphNumState_ = new AlphaNumState();
+    pPunctuationState_ = new PunctuationState();
+    pNewLineState_ = new NewLineState();
+    pSingleLineCommentState_ = new SingleLineCommentState();
+    pMultiLineCommentState_ = new MultiLineCommentState();
+    pSingleQuoteState_ = new SingleQuoteState();
+    pDoubleQuoteState_ = new DoubleQuoteState();
+    pCurrentState_ = pWhiteSpaceState_;
+    pSrc_ = new TokenSourceFile(this);
+  }</div>
+  void deleter(ITokenState*& pState)
+  <div class ="function">{
+    delete pState;
+    pState = nullptr;
+  }</div>
+  TokenContext::~TokenContext()
+  <div class ="function">{
+    <div class="comments">//std::cout &lt;&lt; "\n  TokenContext destroyed";</div>
+    deleter(pWhiteSpaceState_);
+    deleter(pAlphNumState_);
+    deleter(pPunctuationState_);
+    deleter(pNewLineState_);
+    deleter(pSingleLineCommentState_);
+    deleter(pMultiLineCommentState_);
+    deleter(pSingleQuoteState_);
+    deleter(pDoubleQuoteState_);
+    <div class="comments">//delete pCurrentState_;</div>
+    delete pSrc_;
+    pSrc_ = nullptr;
+  }</div>
+
+  TokenSourceFile::TokenSourceFile(TokenContext* pContext)
+  <div class ="function">{
+    lineCount(1);
+    pContext_ = pContext;
+  }</div>
+
+  TokenSourceFile::~TokenSourceFile()
+  <div class ="function">{
+   <div class="comments">// std::cout &lt;&lt; "\n  TokenSourceFile instance closing";</div>
+    if (fs_.good())
+      fs_.close();
+    std::cout &lt;&lt; "\n";
+  }</div>
+  <div class="comments">//----&lt; attempt to open file with ifstream &gt;---------------------</div>
+
+  bool TokenSourceFile::open(std::string path)
+  <div class ="function">{
+   <div class="comments">// std::cout &lt;&lt; "\n  attempting to open " &lt;&lt; path;</div>
+    fs_ = std::ifstream(path, std::ios::in);
+    if (fs_.good())
+    {
+    <div class="comments">//  std::cout &lt;&lt; "\n  open successful";</div>
+      ITokenState* pCurr = pContext_-&gt;pCurrentState_;
+      ITokenState* pNext = pCurr-&gt;nextState();
+      pContext_-&gt;pCurrentState_ = pNext;
+      return true;
+    }
+    std::cout &lt;&lt; "\n  open failed";
+    return false;
+  }</div>
+  <div class="comments">//----&lt; close file &gt;---------------------------------------------</div>
+
+  void TokenSourceFile::close()
+  <div class ="function">{
+    if(fs_.good())
+      fs_.close();
+  }</div>
+  <div class="comments">//----&lt; extract the next available integer &gt;---------------------</div>
+  <div class="comments">/*
+   *  - checks to see if previously enqueued peeked ints are available
+   *  - if not, reads from stream
+   */</div>
+  int TokenSourceFile::next()
+  <div class ="function">{
+    int ch;
+    if (charQ_.size() == 0)  <div class="comments">// no saved peeked ints</div>
+    {
+      if (end())
+        return -1;
+      ch = fs_.get();
+    }
+    else                    <div class="comments">// has saved peeked ints, so use the first</div>
+    {
+      ch = charQ_[0];
+      charQ_.pop_front();      <div class="comments">// pop from queue</div>
+    }
+    if ((char)ch == '\n')   <div class="comments">// track the number of newlines seen so far</div>
+      ++lineCount.ref();
+    return ch;
+  }</div>
+  <div class="comments">//----&lt; peek n ints into source without extracting them &gt;--------</div>
+  <div class="comments">/*
+   *  - This is an organizing prinicple that makes tokenizing easier
+   *  - We enqueue because file streams only allow peeking at the first int
+   *    and even that isn't always reliable if an error occurred.
+   *  - When we look for two punctuator tokens, like ==, !=, etc. we want
+   *    to detect their presence without removing them from the stream.
+   */</div>
+  int TokenSourceFile::peek(size_t n)
+  <div class ="function">{
+    if (n &lt; charQ_.size())  <div class="comments">// nth already peeked, so return it</div>
+    {
+      return charQ_[n];
+    }
+    else                  <div class="comments">// nth int not yet peeked</div>
+    {
+      for (size_t i = charQ_.size(); i &lt;= n; ++i)
+      {
+        if (end())
+          return -1;
+        charQ_.push_back(fs_.get());  <div class="comments">// read and enqueue</div>
+      }
+      return charQ_[n];   <div class="comments">// now return the last peeked</div>
+    }
+  }</div>
+  <div class="comments">//----&lt; reached the end of the file stream? &gt;--------------------</div>
+
+  bool TokenSourceFile::end()
+  <div class ="function">{
+    return !(fs_.good());
+  }</div>
+
+  TokenState::TokenState()
+  <div class ="function">{
+    std::unordered_set&lt;std::string&gt; oneTemp
+    {
+      "&lt;", "&gt;", "[", "]", "(", ")", "{", "}", ".", ";", "=", "+", "-", "*"
+    };
+    oneCharTokens_(oneTemp);
+
+    std::unordered_set&lt;std::string&gt; twoTemp
+    {
+      "&lt;&lt;", "&gt;&gt;", "::", "++", "--", "==", "+=", "-=", "*=", "/=", "&&", "||"
+    };
+    twoCharTokens_(twoTemp);
+  }</div>
+
+  void TokenState::setContext(TokenContext* pContext)
+  <div class ="function">{
+    pContext_ = pContext;
+  }</div>
+  <div class="comments">//----&lt; return set of oneCharTokens &gt;----------------------------</div>
+
+  std::unordered_set&lt;std::string&gt;& TokenState::oneCharTokens()
+  <div class ="function">{
+    return oneCharTokens_.ref();
+  }</div>
+  <div class="comments">//----&lt; does set contain this string? &gt;--------------------------</div>
+
+  bool TokenState::oneCharTokensContains(const std::string& tok)
+  <div class ="function">{
+    return oneCharTokens().find(tok) != oneCharTokens().end();
+  }</div>
+  <div class="comments">//----&lt; return set of twoCharTokens &gt;----------------------------</div>
+
+  std::unordered_set&lt;std::string&gt;& TokenState::twoCharTokens()
+  <div class ="function">{
+    return twoCharTokens_.ref();
+  }</div>
+  <div class="comments">//----&lt; does set contain this string? &gt;--------------------------</div>
+
+  bool TokenState::twoCharTokensContains(const std::string& tok)
+  <div class ="function">{
+    return twoCharTokens().find(tok) != twoCharTokens().end();
+  }</div>
+  <div class="comments">//----&lt; add token to special one char tokens &gt;-------------------</div>
+
+  bool TokenState::addOneCharToken(const std::string& oneCharTok)
+  <div class ="function">{
+    if (oneCharTok.size() &gt; 1)
+      return false;
+    oneCharTokens_.ref().insert(oneCharTok);
+    return true;
+  }</div>
+  <div class="comments">//----&lt; remove token from special one char tokens &gt;--------------</div>
+
+  bool TokenState::removeOneCharToken(const std::string& oneCharTok)
+  <div class ="function">{
+    return oneCharTokens_.ref().erase(oneCharTok);
+  }</div>
+  <div class="comments">//----&lt; add token to special two char tokens &gt;-------------------</div>
+
+  bool TokenState::addTwoCharToken(const std::string& twoCharTok)
+  <div class ="function">{
+    if (twoCharTok.size() != 2)
+      return false;
+    twoCharTokens_.ref().insert(twoCharTok);
+    return true;
+  }</div>
+  <div class="comments">//----&lt; remove token from special two char tokens &gt;--------------</div>
+
+  bool TokenState::removeTwoCharToken(const std::string& twoCharTok)
+  <div class ="function">{
+    return twoCharTokens_.ref().erase(twoCharTok);
+  }</div>
+  <div class="comments">//----&lt; delegate source opening to context's src &gt;---------------</div>
+
+  bool TokenState::open(const std::string& path)
+  <div class ="function">{
+    return pContext_-&gt;pSrc_-&gt;open(path);
+  }</div>
+  <div class="comments">//----&lt; what's next in the TokenSource? &gt;------------------------</div>
+
+  bool TokenState::isWhiteSpace()
+  <div class ="function">{
+    char ch = (char)pContext_-&gt;pSrc_-&gt;peek();
+    return (isspace(ch, loc) && ch != '\n');
+
+  }</div>
+  <div class="comments">//----&lt; what's next in the TokenSource? &gt;------------------------</div>
+
+  bool TokenState::isNewLine()
+  <div class ="function">{
+    return ((char)pContext_-&gt;pSrc_-&gt;peek() == '\n');
+  }</div>
+  <div class="comments">//----&lt; what's next in the TokenSource? &gt;------------------------</div>
+
+  bool TokenState::isAlphaNum()
+  <div class ="function">{
+    char ch = (char)pContext_-&gt;pSrc_-&gt;peek();
+    return (isalnum(ch, loc) || ch == '_');
+  }</div>
+  <div class="comments">//----&lt; what's next in the TokenSource? &gt;------------------------</div>
+
+  bool TokenState::isSingleLineComment()
+  <div class ="function">{
+    int first = pContext_-&gt;pSrc_-&gt;peek();
+    int second = pContext_-&gt;pSrc_-&gt;peek(1);
+    char chFirst = (char)first;
+    char chSecond = (char)second;
+    return (chFirst == '/' && chSecond == '/');
+  }</div>
+  <div class="comments">//----&lt; what's next in the TokenSource? &gt;------------------------</div>
+
+  bool TokenState::isMultiLineComment()
+  <div class ="function">{
+    int first = pContext_-&gt;pSrc_-&gt;peek();
+    int second = pContext_-&gt;pSrc_-&gt;peek(1);
+    char chFirst = (char)first;
+    char chSecond = (char)second;
+    return (chFirst == '/' && chSecond == '*');
+  }</div>
+  <div class="comments">//----&lt; what's next in the TokenSource? &gt;------------------------</div>
+
+  bool TokenState::isDoubleQuote()
+  <div class ="function">{
+    char ch = (char)pContext_-&gt;pSrc_-&gt;peek();
+    if (ch == '@')
+    {
+      char nxt = (char)pContext_-&gt;pSrc_-&gt;peek(1);
+      return (nxt == '\"');
+    }
+    return (ch == '\"');
+  }</div>
+  <div class="comments">//----&lt; what's next in the TokenSource? &gt;------------------------</div>
+
+  bool TokenState::isSingleQuote()
+  <div class ="function">{
+    char ch = (char)pContext_-&gt;pSrc_-&gt;peek();
+    return (ch == '\'');
+  }</div>
+  <div class="comments">//----&lt; what's next in the TokenSource? &gt;------------------------</div>
+
+  bool TokenState::isPunctuation()
+  <div class ="function">{
+    bool test = isWhiteSpace() || isNewLine() || isAlphaNum();
+    test = test || isSingleLineComment() || isMultiLineComment();
+    test = test || isSingleQuote() || isDoubleQuote();
+    return !test;
+  }</div>
+  <div class="comments">//----&lt; return next state based on content of TokenSource &gt;------</div>
+
+  ITokenState* TokenState::nextState()
+  <div class ="function">{
+    int first = pContext_-&gt;pSrc_-&gt;peek();
+    if (first &lt; 0)
+      return nullptr;
+
+    if (isWhiteSpace())
+      return pContext_-&gt;pWhiteSpaceState_;
+
+    if (isNewLine())
+      return pContext_-&gt;pNewLineState_;
+
+    if (isAlphaNum())
+      return pContext_-&gt;pAlphNumState_;
+
+    if (isSingleLineComment())
+      return pContext_-&gt;pSingleLineCommentState_;
+
+    if (isMultiLineComment())
+      return pContext_-&gt;pMultiLineCommentState_;
+
+    if (isDoubleQuote())
+      return pContext_-&gt;pDoubleQuoteState_;
+
+    if (isSingleQuote())
+      return pContext_-&gt;pSingleQuoteState_;
+
+    <div class="comments">// toker's definition of punctuation is anything that is not:</div>
+    <div class="comments">// - whitespace     space, tab, return</div>
+    <div class="comments">// - newline</div>
+    <div class="comments">// - alphanumeric   abc123</div>
+    <div class="comments">// - comment        /* comment */ or // comment</div>
+    <div class="comments">// - quote          'a' or "a string"</div>
+
+    <div class="comments">// Char.IsPunctuation is not inclusive enough</div>
+
+    return pContext_-&gt;pPunctuationState_;
+  }</div>
+  <div class="comments">//----&lt; has tokenizer reached the end of its source? &gt;-----------</div>
+
+  bool TokenState::isDone() <div class ="function">{
+    if (pContext_-&gt;pSrc_ == nullptr)
+      return true;
+    return pContext_-&gt;pSrc_-&gt;end();
+  }</div>
+  <div class="comments">//----&lt; helper function to handle escaped chars in states &gt;------</div>
+  <div class="comments">/*
+   * Tests to see if last char in token is preceded by an odd number
+   * of escape chars, e.g.:
+   * \\\' is escaped
+   * \\"  is not escaped
+   */</div>
+  bool TokenState::isEscaped(Token tok)
+  <div class ="function">{
+    int size = int(tok.size());
+    if (size &lt; 2)
+      return false;
+    int count = 0;
+    for (int i = 0; i &lt; size - 1; ++i)
+    {
+      count = i % 2;
+      if (tok[size - i - 2] != '\\')
+        break;
+    }
+    if (count == 0)
+      return false;
+    return true;
+  }</div>
+
+  <div class="comments">//----&lt; initialize state machine &gt;-------------------------------</div>
+
+  Toker::Toker()
+  <div class ="function">{
+    pContext_ = new TokenContext();
+    ITokenState::setContext(pContext_);
+    doReturnComments(false);
+  }</div>
+
+  Toker::~Toker()
+  <div class ="function">{
+    <div class="comments">//std::cout &lt;&lt; "\n  toker destroyed";</div>
+    delete pContext_;
+  }</div>
+  <div class="comments">//----&lt; attempt to open source of tokens &gt;-----------------------</div>
+  <div class="comments">/*
+   * If src is successfully opened, it uses TokenState.nextState(context_)
+   * to set the initial state, based on the source content.
+   */</div>
+  bool Toker::open(const std::string& path)
+  <div class ="function">{
+    return pContext_-&gt;pSrc_-&gt;open(path);  <div class="comments">// if true, src has set initial state</div>
+  }</div>
+  <div class="comments">//----&lt; close source of tokens &gt;---------------------------------</div>
+
+  void Toker::close()
+  <div class ="function">{
+    pContext_-&gt;pSrc_-&gt;close();
+  }</div>
+  <div class="comments">//----&lt; extract a single token from TokenSource &gt;----------------</div>
+  <div class="comments">/*
+   * Method promises to:
+   * - extract all the text for a single token
+   * - leave all the text for the next token in the TokenSource
+   * - discard all whitespace except for newlines
+   * - discard all comments unless doReturnComments is true
+   */</div>
+  bool Toker::overwrite(Token tok)
+  <div class ="function">{
+    if (isWhiteSpace(tok))
+      return true;
+    if (!doReturnComments() && ((isSingleLineComment(tok) || isMultipleLineComment(tok))))
+      return true;
+    if ((int)tok[0] &lt; -1)  <div class="comments">// is Byte Order Mark</div>
+      return true;
+    return false;
+  }</div>
+  <div class="comments">//----&lt; extract token &gt;------------------------------------------</div>
+
+  Token Toker::getTok()
+  <div class ="function">{
+    Token tok;
+    while (!isDone())
+    {
+      tok = pContext_-&gt;pCurrentState_-&gt;getTok();
+      pContext_-&gt;pCurrentState_ = pContext_-&gt;pCurrentState_-&gt;nextState();
+      if (!overwrite(tok))
+        break;
+    }
+    return tok;
+  }</div>
+  <div class="comments">//----&lt; has Toker reached end of its source? &gt;-------------------</div>
+
+  bool Toker::isDone()
+  <div class ="function">{
+    if (pContext_-&gt;pCurrentState_ == nullptr)
+      return true;
+    return pContext_-&gt;pCurrentState_-&gt;isDone();
+  }</div>
+  <div class="comments">//----&lt; return number of newlines encountered in file &gt;----------</div>
+
+  int Toker::lineCount() <div class ="function">{ return int(pContext_-&gt;pSrc_-&gt;lineCount()); }</div>
+
+  <div class="comments">//----&lt; return set of oneCharTokens &gt;----------------------------</div>
+
+  Property&lt;std::unordered_set&lt;std::string&gt;&gt;& Toker::oneCharTokens()
+  <div class ="function">{
+    return pContext_-&gt;pCurrentState_-&gt;oneCharTokens_;
+  }</div>
+  <div class="comments">//----&lt; return set of twoCharTokens &gt;----------------------------</div>
+
+  Property&lt;std::unordered_set&lt;std::string&gt;&gt;& Toker::twoCharTokens()
+  <div class ="function">{
+    return pContext_-&gt;pCurrentState_-&gt;twoCharTokens_;
+  }</div>
+  <div class="comments">//----&lt; add token to special one char tokens &gt;-------------------</div>
+
+  bool Toker::addOneCharToken(const std::string& oneCharTok)
+  <div class ="function">{
+    if (oneCharTok.size() != 1)
+      return false;
+    pContext_-&gt;pCurrentState_-&gt;oneCharTokens_.ref().insert(oneCharTok);
+    return true;
+  }</div>
+  <div class="comments">//----&lt; remove token from special one char tokens &gt;--------------</div>
+
+  bool Toker::removeOneCharToken(const std::string& oneCharTok)
+  <div class ="function">{
+    return pContext_-&gt;pCurrentState_-&gt;oneCharTokens_.ref().erase(oneCharTok);
+  }</div>
+  <div class="comments">//----&lt; add token to special two char tokens &gt;-------------------</div>
+
+  bool Toker::addTwoCharToken(const std::string& twoCharTok)
+  <div class ="function">{
+    if (twoCharTok.size() != 2)
+      return false;
+    pContext_-&gt;pCurrentState_-&gt;twoCharTokens_.ref().insert(twoCharTok);
+    return true;
+  }</div>
+  <div class="comments">//----&lt; remove token from special two char tokens &gt;--------------</div>
+
+  bool Toker::removeTwoCharToken(const std::string& twoCharTok)
+  <div class ="function">{
+    return pContext_-&gt;pCurrentState_-&gt;twoCharTokens_.ref().erase(twoCharTok);
+  }</div>
+  <div class="comments">//----&lt; is this token whitespace? &gt;------------------------------</div>
+
+  bool Toker::isWhiteSpace(Token tok)
+  <div class ="function">{
+    if (tok.size() == 0)
+      return false;
+    return (isspace(tok[0], loc) && tok[0] != '\n');
+  }</div>
+  <div class="comments">//----&lt; is this token a newline? &gt;-------------------------------</div>
+
+  bool Toker::isNewLine(Token tok)
+  <div class ="function">{
+    if (tok.size() == 0)
+      return false;
+    return (tok[0] == '\n');
+  }</div>
+  <div class="comments">//----&lt; is this token alphanumeric? &gt;----------------------------</div>
+
+  bool Toker::isAlphaNum(Token tok)
+  <div class ="function">{
+    if (tok.size() == 0)
+      return false;
+    return (isalnum(tok[0]) || tok[0] == '_');
+  }</div>
+  <div class="comments">//----&lt; is this token punctuator? &gt;------------------------------</div>
+
+  bool Toker::isPunctuator(Token tok)
+  <div class ="function">{
+    if (tok.size() == 0)
+      return false;
+    bool test = isWhiteSpace(tok) || isNewLine(tok) || isAlphaNum(tok);
+    test = test || isSingleLineComment(tok) || isMultipleLineComment(tok);
+    test = test || isSingleQuote(tok) || isDoubleQuote(tok);
+    return !test;
+  }</div>
+  <div class="comments">//----&lt; is this token a single line comment? &gt;-------------------</div>
+
+  bool Toker::isSingleLineComment(Token tok)
+  <div class ="function">{
+    if (tok.size() &lt; 2)
+      return false;
+    if (tok[0] == '/' && tok[1] == '/')
+      return true;
+    return false;
+  }</div>
+  <div class="comments">//----&lt; is this token a multiple line comment? &gt;-----------------</div>
+
+  bool Toker::isMultipleLineComment(Token tok)
+  <div class ="function">{
+    if (tok.size() &lt; 2)
+      return false;
+    if (tok[0] == '/' && tok[1] == '*')
+      return true;
+    return false;
+  }</div>
+  <div class="comments">//----&lt; is this token a double quoted string? &gt;------------------</div>
+
+  bool Toker::isDoubleQuote(Token tok)
+  <div class ="function">{
+    if (tok.size() == 0)
+      return false;
+    char ch = tok[0];
+    if (ch == '@')
+    {
+      char nxt = tok[1];
+      return (nxt == '\"');
+    }
+    return (ch == '\"');
+  }</div>
+  <div class="comments">//----&lt; is this token a single-quoted character? &gt;---------------</div>
+
+  bool Toker::isSingleQuote(Token tok)
+  <div class ="function">{
+    if (tok.size() == 0)
+      return false;
+    return (tok[0] == '\'');
+  }</div>
+}
+
+#ifdef TEST_TOKER
+
+using namespace Lexer;
+
+class DemoToker
+<div class ="classes">{
+public:
+  <div class="comments">//----&lt; tokenize a test file &gt;-----------------------------------</div>
+  <div class="comments">/*
+    * This method allows us to easily test against several different
+    * files with special cases that have to be handled correctly.
+    */</div>
+  static bool testTokerWithComments(const std::string& path)
+  <div class ="function">{
+    Toker toker;
+    toker.doReturnComments(true);
+
+    std::string fqf = path;  <div class="comments">// FileSystem::Path::GetFullPath(path);</div>
+    if (!toker.open(fqf))
+    {
+      std::cout &lt;&lt; "\n can't open \"" &lt;&lt; fqf &lt;&lt; "\"\n";
+      return false;
+    }
+    else
+    {
+      std::cout &lt;&lt; "\n  processing file: \"" &lt;&lt; fqf &lt;&lt; "\"";
+    }
+    while (!toker.isDone())
+    {
+      Token tok = toker.getTok();
+      if (Toker::isNewLine(tok))
+      {
+        tok = "newline";
+      }
+      else if (Toker::isMultipleLineComment(tok))  <div class="comments">// this is a cosmetic</div>
+        tok = "\n" + tok;
+      std::cout &lt;&lt; "\n -- line#" &lt;&lt; std::setw(4) &lt;&lt; toker.lineCount() &lt;&lt; " " &lt;&lt; tok;
+    }
+    toker.close();
+    std::cout &lt;&lt; "\n";
+    return true;
+  }</div>
+  static bool testTokerWithoutComments(const std::string& path)
+  <div class ="function">{
+    Toker toker;
+    toker.doReturnComments(false);
+
+    std::string fqf = path;  <div class="comments">// System.IO.Path.GetFullPath(path);</div>
+    if (!toker.open(fqf))
+    {
+      std::cout &lt;&lt; "\n can't open \"" &lt;&lt; fqf &lt;&lt; "\"\n";
+      return false;
+    }
+    else
+    {
+      std::cout &lt;&lt; "\n  processing file: \"" &lt;&lt; fqf &lt;&lt; "\"\n";
+    }
+    while (!toker.isDone())
+    {
+      Token tok = toker.getTok();
+      if (Toker::isNewLine(tok))
+      {
+        tok = "newline";
+      }
+      else if (Toker::isMultipleLineComment(tok))  <div class="comments">// this is a cosmetic</div>
+        tok = "\n" + tok;
+      std::cout &lt;&lt; "\n -- line#" &lt;&lt; std::setw(4) &lt;&lt; toker.lineCount() &lt;&lt; " " &lt;&lt; tok;
+    }
+    toker.close();
+   <div class="comments">// std::cout &lt;&lt; "\n";</div>
+    return true;
+  }</div>
+};
+</div>
+int main()
+<div class ="function">{
+  std::cout &lt;&lt; "\n  Demonstrate Toker class";
+  std::cout &lt;&lt; "\n =========================";
+
+  std::string msg;
+  msg += ("\n  Some things this Instructor's Solution does for CSE681 Project #2:");
+  msg += ("\n  - collect comments as tokens");
+  msg += ("\n  - collect double quoted strings as tokens");
+  msg += ("\n  - collect single quoted strings as tokens");
+  msg += ("\n  - collect specified single characters as tokens");
+  msg += ("\n  - collect specified character pairs as tokens");
+  msg += ("\n  - integrate with a Semiression collector");
+  msg += ("\n  - provide the required package structure");
+  msg += ("\n");
+
+  <div class="comments">//std::cout &lt;&lt; msg;</div>
+
+  DemoToker::testTokerWithComments("../Tokenizer/Toker.h");
+  DemoToker::testTokerWithoutComments("../Tokenizer/Toker.cpp");
+
+  std::cout &lt;&lt; "\n\n";
+}</div>
+
+#endif
+    </pre>
+  </body>
+</html>

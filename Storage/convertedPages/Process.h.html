@@ -1,0 +1,210 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>Process.h</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="Process.cpp.html">Process.cpp</a>
+    </h3>#pragma once
+<div class="comments">///////////////////////////////////////////////////////////////////////</div>
+<div class="comments">// Process.h - class used to start process                           //</div>
+<div class="comments">// ver 1.0                                                           //</div>
+<div class="comments">// Jim Fawcett, CSE687 - Object Oriented Design, Spring 2018         //</div>
+<div class="comments">///////////////////////////////////////////////////////////////////////</div>
+<div class="comments">/*
+*  Package Operations:
+*  -------------------
+*  This package provides a class, Process, used to start named processes.
+*  It has a lot of potential, mostly unrealized by this simple beginning.
+*
+*  Possible future features include:
+*  - interprocess communication between parent and child using pipes
+*  - handling multiple process, perhaps in a process pool
+*  - killing processes
+*  - enumerating running processes that match a regular expression
+*  - yada, yada, yada
+*
+*  Required Files:
+*  ---------------
+*  Process.h, Process.cpp
+*
+*  Maintenance History:
+*  --------------------
+*  ver 1.0 : 19 Feb 2018
+*  - first release
+*/</div>
+
+#include &lt;windows.h&gt;
+#include &lt;string&gt;
+#include &lt;iostream&gt;
+#include &lt;functional&gt;
+
+using CBP = std::function&lt;void(void)&gt;;
+
+class Process
+<div class ="classes">{
+public:
+	Process();
+	virtual ~Process() <div class ="function">{}</div>
+	bool create(const std::string& path = "");
+	void title(const std::string& title);
+	void application(const std::string& app);
+	void commandLine(const std::string& cmdLine);
+	void registerCallback();
+	void setCallBackProcessing(CBP cbp);
+	void callback();
+	HANDLE getProcessHandle();
+private:
+	STARTUPINFO startInfo_;
+	PROCESS_INFORMATION procInfo_;
+	std::wstring title_;
+	std::wstring appName_;
+	std::wstring commandLine_;
+	static CBP cbp_;
+};
+</div>
+CBP Process::cbp_ = []() <div class ="function">{ std::cout &lt;&lt; "\n  --- child process exited ---"; };</div>
+
+<div class="comments">//----&lt; Process constructor &gt;------------------------------------------</div>
+<div class="comments">/*
+* - This eventually will have more functionality
+*/</div>
+inline Process::Process()
+<div class ="function">{
+	GetStartupInfo(&startInfo_);
+	startInfo_.dwFlags = STARTF_USEPOSITION | STARTF_USESIZE;
+	startInfo_.dwX = 200;
+	startInfo_.dwY = 250;
+	startInfo_.dwYSize = 300;
+}</div>
+<div class="comments">//----&lt; helper function to convert strings &gt;---------------------------</div>
+
+std::string wToS(const std::wstring& ws)
+<div class ="function">{
+	std::string conv;
+	for (auto ch : ws)
+	{
+		conv.push_back(static_cast&lt;char&gt;(ch));
+	}
+	return conv;
+}</div>
+<div class="comments">//----&lt; helper function to convert strings &gt;---------------------------</div>
+
+std::wstring sToW(const std::string& s)
+<div class ="function">{
+	std::wstring conv;
+	for (auto ch : s)
+	{
+		conv.push_back(static_cast&lt;wchar_t&gt;(ch));
+	}
+	return conv;
+}</div>
+<div class="comments">//----&lt; define application new process runs &gt;--------------------------</div>
+
+inline void Process::application(const std::string& appName)
+<div class ="function">{
+	appName_ = sToW(appName);
+}</div>
+<div class="comments">//----&lt; define commandline passed to new application &gt;-----------------</div>
+
+inline void Process::commandLine(const std::string& cmdLine)
+<div class ="function">{
+	commandLine_ = sToW(cmdLine);
+}</div>
+<div class="comments">//----&lt; define title bar for console window &gt;--------------------------</div>
+<div class="comments">/*
+* - applications like Notepad overwrite this string
+*/</div>
+inline void Process::title(const std::string& title)
+<div class ="function">{
+	title_ = sToW(title);
+	startInfo_.lpTitle = const_cast&lt;LPWSTR&gt;(title_.c_str());
+}</div>
+<div class="comments">//----&lt; start new child process &gt;--------------------------------------</div>
+
+inline bool Process::create(const std::string& appName)
+<div class ="function">{
+	std::wstring app;
+	if (appName.size() == 0)
+		app = appName_;
+	else
+	{
+		app = sToW(appName);
+	}
+	LPCTSTR applic = app.c_str();
+	LPTSTR cmdLine = const_cast&lt;LPTSTR&gt;(commandLine_.c_str());
+	LPSECURITY_ATTRIBUTES prosec = nullptr;
+	LPSECURITY_ATTRIBUTES thrdsec = nullptr;
+	BOOL inheritHandles = false;
+	DWORD createFlags = CREATE_NEW_CONSOLE;  <div class="comments">// or CREATE_NO_WINDOW</div>
+	LPVOID environment = nullptr;
+	LPCTSTR currentPath = nullptr;
+	LPSTARTUPINFO pStartInfo = &startInfo_;
+	LPPROCESS_INFORMATION pPrInfo = &procInfo_;
+
+	BOOL OK =
+		CreateProcess(
+			applic, cmdLine, prosec, thrdsec, inheritHandles,
+			createFlags, environment, currentPath, pStartInfo, pPrInfo
+		);
+	return OK;
+}</div>
+
+<div class="comments">///////////////////////////////////////////////////////////////////////</div>
+<div class="comments">// child process exit callback processing</div>
+
+<div class="comments">//----&lt; provide new callable object for callback to invoke &gt;-----------</div>
+
+void Process::setCallBackProcessing(CBP cbp)
+<div class ="function">{
+	cbp_ = cbp;
+}</div>
+<div class="comments">//----&lt; function called when child process exists &gt;--------------------</div>
+
+void Process::callback()
+<div class ="function">{
+	cbp_();
+}</div>
+<div class="comments">//----&lt; Windows API declared function type for callbacks &gt;-------------</div>
+
+void CALLBACK WaitOrTimerCallback(_In_ PVOID lpParameter, _In_ BOOLEAN TimerOrWaitFired)
+<div class ="function">{
+	Process p;
+	p.callback();
+	return;
+}</div>
+<div class="comments">//----&lt; register callback with Windows API &gt;---------------------------</div>
+
+void Process::registerCallback()
+<div class ="function">{
+	HANDLE hNewHandle;
+	HANDLE hProcHandle = procInfo_.hProcess;
+	RegisterWaitForSingleObject(
+		&hNewHandle, hProcHandle, WaitOrTimerCallback,
+		NULL, INFINITE, WT_EXECUTEONLYONCE
+	);
+}</div>
+
+HANDLE Process::getProcessHandle()
+<div class ="function">{
+	return procInfo_.hProcess;
+}</div>
+    </pre>
+  </body>
+</html>

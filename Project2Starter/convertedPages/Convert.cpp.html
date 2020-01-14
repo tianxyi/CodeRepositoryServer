@@ -1,0 +1,53 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>Convert.cpp</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="Convert.h.html">Convert.h</a>
+    </h3><div class="comments">///////////////////////////////////////////////////////////////////////</div>
+<div class="comments">// Convert.cpp -											         //</div>
+<div class="comments">// ver 1.0                                                           //</div>
+<div class="comments">// Tianxiang Yi, CSE687 - Object Oriented Design, Spring 2019        //</div>
+<div class="comments">///////////////////////////////////////////////////////////////////////</div>
+
+#include "Convert.h"
+
+
+#ifdef TEST_CONVERT
+
+int main() <div class ="function">{
+	<div class="comments">//Convert c("554hw3.txt");</div>
+	<div class="comments">//c.readfile();</div>
+	<div class="comments">//c.translate();</div>
+	<div class="comments">//c.show();</div>
+	<div class="comments">//c.inserttag();</div>
+	<div class="comments">//c.show();</div>
+	<div class="comments">//c.inserttemp("head", "tail");</div>
+	<div class="comments">//c.show();</div>
+	Convert c("554hw3.txt");
+	c.convertFile();
+	getchar();
+	getchar();
+}</div>
+
+#endif
+    </pre>
+  </body>
+</html>

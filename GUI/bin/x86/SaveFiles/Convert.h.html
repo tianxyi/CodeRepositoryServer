@@ -1,0 +1,407 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>Convert.h</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="FileSystem.h.html">FileSystem.h</a>
+      <a href="Convert.cpp.html">Convert.cpp</a>
+    </h3>#pragma once
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">// Convert.h - Converts file into a Webpage fragment               //</div>
+<div class="comments">// ver 1.0                                                         //</div>
+<div class="comments">// Tianxiang Yi, CSE687 - Object Oriented Design, Spring 2019      //</div>
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">/*
+ * Package Operations:
+ * -------------------
+ * This package contains one Convert class: Convert(string);
+ * It purpose is replacing all html markup character to their exscape 
+ * sequence equivalent and prpending "&lt;pre&gt;" and postpending "&lt;/pre&gt;"
+ * to the content.
+ * It added function that support wrapping selected parts of the web page
+ * in &lt;div&gt; blocks that can be displayed or hidden.
+ * The parts to b selected are Comment blocks, Function bodies, Class bodies
+ * Required Files:
+ * ---------------
+ * Convert.h
+ *
+ * Maintenance History:
+ * --------------------
+ * ver 1.0 : 11 Feb 2019
+ * ver 1.1 : 25 Mar 2019
+ * - second release
+ *
+*/</div>
+#include&lt;fstream&gt;
+#include&lt;vector&gt;
+#include&lt;iostream&gt;
+#include&lt;string&gt;
+#include&lt;queue&gt;
+#include"..\FileSystem\FileSystem.h"
+#include&lt;map&gt;
+class Convert
+<div class ="classes">{
+public:
+	Convert(const std::string& fullfile);
+
+	<div class="comments">// read file</div>
+
+	void readfile();
+
+	<div class="comments">// translate markup</div>
+
+	void translate();
+
+	<div class="comments">// insert the tag </div>
+
+	void inserttag();
+
+	<div class="comments">// insert the html template</div>
+
+	void inserttemp(const std::string &string1, const std::string &string2);
+
+	<div class="comments">// show the content of the file</div>
+
+	void show();
+
+	<div class="comments">// return the content of the file</div>
+
+	std::string out();
+	std::string showName();
+
+	void setDepTable(const std::vector&lt;std::string&gt; & dt);
+
+	void setClasses(const std::map&lt;size_t, size_t&gt; & map);
+	
+	void setFunction(const std::map&lt;size_t, size_t&gt; & func);
+
+	void addPreCodeHtml();
+	void addPreTag();
+	void addClosingTags();
+	void skipSpecialChars(std::string &line);
+	
+	void convertFile();
+
+	void handleClasses(size_t count, std::string & line);
+
+	void handleComments(std::string &line);
+	void handleMultiComments(std::string &line, boolean &state);
+
+	void addDependencyLinks();
+private:
+	std::string fullspec_;
+	std::string filename_;
+	std::string filepath_;
+	std::vector&lt;std::string&gt; dt_;
+	std::map&lt;size_t, size_t&gt; classes;
+	std::map&lt;size_t, size_t&gt; function;
+	std::string file_;<div class="comments">//not need</div>
+
+	std::ofstream out_;
+};
+</div>
+<div class="comments">//----&lt; construct Convert instance  &gt;-----------------</div>
+
+inline Convert::Convert(const std::string& fullfile) <div class ="function">{
+	fullspec_ = FileSystem::Path::getFullFileSpec(fullfile);
+	filename_ = FileSystem::Path::getName(fullfile);
+	filepath_ = FileSystem::Path::getPath(fullfile);
+
+}</div>
+<div class="comments">//----&lt; read string from file  &gt;----------------------</div>
+
+inline void Convert::readfile() <div class ="function">{
+	std::ifstream in1(filename_);
+	std::string s;
+	while (!in1.eof()) {
+		std::getline(in1, s);
+		file_.append(s);
+		file_.append("\n");
+	}
+	in1.close();
+}</div>
+<div class="comments">//----&lt; translate the markup  &gt;-----------------</div>
+
+inline void Convert::translate() <div class ="function">{
+	std::string::size_type l = file_.find("&lt;", 0);
+	while (l != std::string::npos) {
+		file_.replace(l, 1, "&lt;");
+		l = file_.find("&lt;", l + 1);
+	}
+
+	std::string::size_type g = file_.find("&gt;", 0);
+	while (g != std::string::npos) {
+		file_.replace(g, 1, "&gt;");
+		g = file_.find("&gt;", g + 1);
+	}
+}</div>
+<div class="comments">//----&lt; insert the &lt;pre&gt;/&lt;/pre&gt; tag  &gt;-----------------</div>
+
+inline void Convert::inserttag() <div class ="function">{
+	file_.insert(0, "&lt;pre&gt;");
+	file_.append("&lt;\\pre&gt;");
+	file_.append("\n");
+}</div>
+<div class="comments">//----&lt; insert the html template  &gt;-----------------</div>
+
+inline void Convert::inserttemp(const std::string &string1, const std::string &string2) <div class ="function">{
+	file_.insert(0, string1);
+	file_.append(string2);
+	file_.append("\n");
+
+
+}</div>
+<div class="comments">//----&lt; show converted content   &gt;-----------------</div>
+
+inline void Convert::show() <div class ="function">{
+	std::cout &lt;&lt; file_;
+}</div>
+<div class="comments">//----&lt; return converted content &gt;-------------------</div>
+
+inline std::string Convert::out() <div class ="function">{
+	return file_;
+}</div>
+
+inline std::string Convert::showName()
+<div class ="function">{
+	return filename_;
+}</div>
+
+inline void Convert::setDepTable(const std::vector&lt;std::string&gt;& dt)
+<div class ="function">{
+	dt_ = dt;
+}</div>
+
+inline void Convert::setClasses(const std::map&lt;size_t, size_t&gt;& map)
+<div class ="function">{
+	classes = map;
+}</div>
+
+inline void Convert::addPreCodeHtml()
+<div class ="function">{
+	out_ &lt;&lt; "&lt;DOCTYPE !HTML&gt;" &lt;&lt; std::endl;
+	out_ &lt;&lt; "&lt;html&gt;" &lt;&lt; std::endl;
+	out_ &lt;&lt; "  &lt;head&gt;" &lt;&lt; std::endl;
+	out_ &lt;&lt; "    &lt;Title&gt;" &lt;&lt; filename_ &lt;&lt; "&lt;/Title&gt;" &lt;&lt; std::endl;
+	<div class="comments">//out_ &lt;&lt; "    &lt;style rel=\"stylesheet\" type=\"text/css\" href =\"style.css\"&gt;" &lt;&lt; std::endl;</div>
+	out_ &lt;&lt; "    &lt;style &gt;" &lt;&lt; std::endl;
+	out_ &lt;&lt; "      body {" &lt;&lt; std::endl;
+	out_ &lt;&lt; "        padding:15px 40px;" &lt;&lt; std::endl;
+	out_ &lt;&lt; "        font-family: Consolas;" &lt;&lt; std::endl;
+	out_ &lt;&lt; "        font-size: 1.25em;" &lt;&lt; std::endl;
+	out_ &lt;&lt; "        font-weight: normal;" &lt;&lt; std::endl;
+	out_ &lt;&lt; "      }" &lt;&lt; std::endl;
+	out_ &lt;&lt; "      &lt;/style&gt;" &lt;&lt; std::endl;
+	out_ &lt;&lt; "    &lt;link rel=\"stylesheet\" type=\"text/css\" href =\"style.css\"&gt;" &lt;&lt; std::endl;
+	out_ &lt;&lt; "      &lt;script src=\"script.js\"&gt;&lt;/script&gt;" &lt;&lt; std::endl;
+	out_ &lt;&lt; "  &lt;/head&gt;" &lt;&lt; std::endl &lt;&lt; std::endl;
+	out_ &lt;&lt; "  &lt;body&gt;" &lt;&lt; std::endl;
+	out_ &lt;&lt; " &lt;div class=\"aaa\"&gt;&lt;button class=\"absolute\" onclick = \"toggleVisibility('comments')\"&gt;Comment &lt;/button&gt;&lt;/div&gt;" &lt;&lt; std::endl;
+	out_ &lt;&lt; " &lt;div class=\"bbb\"&gt;&lt;button class=\"absolute\" onclick = \"toggleVisibility('classes')\"&gt;Class   &lt;/button&gt;&lt;/div&gt;" &lt;&lt; std::endl;
+	out_ &lt;&lt; " &lt;div class=\"ccc\"&gt;&lt;button class=\"absolute\" onclick = \"toggleVisibility('function')\"&gt;Function&lt;/button&gt;&lt;/div&gt;" &lt;&lt; std::endl;
+}</div>
+
+inline void Convert::addPreTag()
+<div class ="function">{
+	out_ &lt;&lt; "    &lt;pre&gt;" &lt;&lt; std::endl;
+}</div>
+
+inline void Convert::addClosingTags()
+<div class ="function">{
+	out_ &lt;&lt; "    &lt;/pre&gt;" &lt;&lt; std::endl;
+	out_ &lt;&lt; "  &lt;/body&gt;" &lt;&lt; std::endl;
+	out_ &lt;&lt; "&lt;/html&gt;" &lt;&lt; std::endl;
+}</div>
+
+inline void Convert::skipSpecialChars(std::string & line)
+<div class ="function">{
+	size_t pos = line.npos;
+	while ((pos = line.find('&lt;')) != line.npos)
+		line.replace(pos, 1, "&lt;");
+
+	while ((pos = line.find('&gt;')) != line.npos)
+		line.replace(pos, 1, "&gt;");
+}</div>
+
+inline void Convert::convertFile()
+<div class ="function">{
+	std::ifstream in(fullspec_);<div class="comments">//niubi</div>
+
+	if ( !in.good()) {<div class="comments">//if (!in.is_open() || !in.good()) {</div>
+		std::cout &lt;&lt; "Error -- unable to read file, path may be invalid.";
+		<div class="comments">//std::cout &lt;&lt; fullspec_&lt;&lt;"\n";</div>
+		in.close();
+	}
+	std::string filename = filename_;
+	std::string outputPath = "..<div class="comments">//convertedPages//" + filename + ".html";//std::string outputPath = "..//..//convertedPages//" + filename + ".html";</div>
+	out_.open(outputPath, std::ofstream::out);<div class="comments">//niubi</div>
+	if (!out_.is_open() || !out_.good()) {
+		std::cout&lt;&lt;"Error -- unable to open output file for writing.";
+		std::cout &lt;&lt; outputPath &lt;&lt; "\n";
+		in.close();
+	}
+	 addPreCodeHtml();
+	addPreTag();
+	addDependencyLinks();
+	
+	while (in.good()) {
+		std::string line;
+		size_t count = 1;
+		boolean state = false;
+		auto it1 = classes.begin();
+		auto it2 = function.begin();
+
+		while (std::getline(in, line)) {
+			skipSpecialChars(line);
+
+			if (classes.size()!=0&&it1!=classes.end()) {
+				if (count == it1-&gt;first) {
+					size_t pos1 = line.find('{');
+					if (pos1 != line.npos) {
+						line.replace(pos1, 1, "&lt;div class =\"classes\"&gt;{");
+					}
+				}
+
+				if (count == it1-&gt;second) {
+					line+= "&lt;/div&gt;";
+					it1++;
+				}
+
+			}
+
+			if (function.size() != 0 && it2 != function.end()) {
+				if (count == it2-&gt;first) {
+					size_t pos2 = line.find('{');
+					if (pos2 != line.npos) {
+						line.replace(pos2, 1, "&lt;div class =\"function\"&gt;{");
+					}
+				}
+
+				if (count == it2-&gt;second) {
+					line += "&lt;/div&gt;";
+					it2++;
+				}
+			}
+
+			handleComments(line);
+			handleMultiComments(line, state);
+			out_ &lt;&lt; line &lt;&lt; std::endl;
+
+			count++;
+		}
+	}
+
+	addClosingTags();
+	out_.close();
+	std::cout &lt;&lt; "-- Converted:" &lt;&lt; filename&lt;&lt;"\n";
+
+
+}</div>
+
+inline void Convert::handleClasses(size_t count, std::string & line)
+<div class ="function">{
+	auto it = classes.begin();
+	if (count == it-&gt;first) {
+		line.replace(0, 1, "&lt; div class = \"comments\"&gt;{");
+	}
+	if (count == it-&gt;second) {
+		line += "&lt;/div&gt;";
+		it++;
+	}
+	<div class="comments">//if(count==)</div>
+}</div>
+inline void Convert::handleMultiComments(std::string &line, boolean &state) <div class ="function">{
+	if (state == false) {
+		size_t pos = line.find('/');
+		if (pos == line.npos)return;
+		if (pos == line.size() - 1)return;
+		if (line[pos + 1] == '*') {
+			line.replace(pos, 1, "&lt;div class=\"comments\"&gt;/");
+			state = true;
+
+			<div class="comments">//return;</div>
+			if (pos + 2 == line.npos || pos + 2 == line.size() - 1) { return; }
+
+			size_t pos2 = line.find('*', pos + 2);
+
+			if (pos2 == line.npos)  { return; }
+			if (pos2 = line.size() - 1) { return; }
+			
+			if (line[pos2 + 1] == '/') {
+				line+= "&lt;/div&gt;";
+				state = false;
+				return;
+			}
+
+
+		}
+	}
+	else {
+		size_t pos = line.find('*');
+
+		if (pos == line.npos) { return; }
+		if (pos == line.size() - 1) { return; }
+
+		if (line[pos + 1] == '/') {
+			line += "&lt;/div&gt;";
+			state = false;
+			return;
+		}
+	}
+}</div>
+inline void Convert::handleComments(std::string & line)
+<div class ="function">{
+	size_t pos = line.find('/');
+	if (pos == line.npos)return;
+	if (pos == line.size() - 1) return;
+	if (line[pos + 1] == '/') {
+		
+			line.replace(pos, 1, "&lt;div class=\"comments\"&gt;/");
+			line += "&lt;/div&gt;";
+		
+			return;
+
+	}
+
+
+
+}</div>
+
+inline void Convert::addDependencyLinks()
+<div class ="function">{
+	if (dt_.size() == 0) {
+		<div class="comments">//std::cout &lt;&lt; "\n    No dependencies found for [" + filename_ + "]. Skipping dependency links..";</div>
+		return;
+	}
+	out_ &lt;&lt; "    &lt;h3&gt;Dependencies: " &lt;&lt; std::endl;
+	for (auto dep : dt_) {
+		out_ &lt;&lt; "      &lt;a href=\"" &lt;&lt; FileSystem::Path::getName(dep) &lt;&lt; ".html\"&gt;" &lt;&lt; FileSystem::Path::getName(dep) &lt;&lt; "&lt;/a&gt;" &lt;&lt; std::endl;
+	}
+	out_ &lt;&lt; "    &lt;/h3&gt;";
+}</div>
+
+inline void Convert::setFunction(const std::map&lt;size_t,size_t&gt; &F) <div class ="function">{
+	function = F;
+
+}</div>
+
+    </pre>
+  </body>
+</html>

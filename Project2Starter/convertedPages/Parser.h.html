@@ -1,0 +1,138 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>Parser.h</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="ITokenCollection.h.html">ITokenCollection.h</a>
+      <a href="Parser.cpp.html">Parser.cpp</a>
+    </h3>#ifndef PARSER_H
+#define PARSER_H
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">//  Parser.h - Analyzes C++ and C# language constructs             //</div>
+<div class="comments">//  ver 1.0                                                        //</div>
+<div class="comments">//  Language:      Visual C++, Visual Studio 2015                  //</div>
+<div class="comments">//  Platform:      Dell XPS 8920, Windows 10                       //</div>
+<div class="comments">//  Application:   Prototype for CSE687 - OOD Projects             //</div>
+<div class="comments">//  Author:        Jim Fawcett, CST 4-187, Syracuse University     //</div>
+<div class="comments">//                 (315) 443-3948, jfawcett@twcny.rr.com           //</div>
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">/*
+  Module Operations: 
+  ==================
+  This module defines a Parser class.  Its instances collect 
+  semi-expressions from one or more files for analysis.  
+  Analysis consists of applying a set of rules to the semi-expression, 
+  and for each rule that matches, invoking a set of one or more actions.
+
+  Build Process:
+  ==============
+  Required files
+    - Parser.h, Parser.cpp, 
+    - ITokenCollection.h, 
+    - Semi.h, Semi.cpp,
+    - toker.h, toker.cpp,
+    - ActionsAndRules.h, ActionsAndRules.cpp,
+    - GrammarHelpers.h, GrammarHelpers.cpp,
+    - AbstrSynTree.h, AbstrSynTree.cpp,
+    - ScopeStack.h, ScopeStack.cpp
+    - ConfigureParser.h, ConfigureParser.cpp,
+    - FileSystem.h, FileSystem.cpp,
+    - Logger.h, Logger.cpp,
+    - Utilities.h, Utilities.cpp
+
+  Maintenance History:
+  ===================
+  ver 1.0 : 11 Feb 2019
+  - first release
+  - This is a modification of the parser used in CodeAnalyzer.
+  - The most important change is replacing its tokenizer with a 
+    State Pattern based design
+
+*/</div>
+
+#include &lt;string&gt;
+#include &lt;iostream&gt;
+#include &lt;vector&gt;
+#include "../SemiExpression/ITokenCollection.h"
+
+namespace CodeAnalysis
+{
+  <div class="comments">///////////////////////////////////////////////////////////////</div>
+  <div class="comments">// abstract base class for parsing actions</div>
+  <div class="comments">//   - when a rule succeeds, it invokes any registered action</div>
+
+  class Parser;
+
+  class IBuilder
+  <div class ="classes">{
+  public:
+    virtual ~IBuilder() <div class ="function">{}</div>
+    virtual Parser* Build() = 0;
+  };
+</div>
+  <div class="comments">///////////////////////////////////////////////////////////////</div>
+  <div class="comments">// abstract base class for parsing actions</div>
+  <div class="comments">//   - when a rule succeeds, it invokes any registered action</div>
+
+  class IAction
+  <div class ="classes">{
+  public:
+    virtual ~IAction() <div class ="function">{}</div>
+    virtual void doAction(const Lexer::ITokenCollection* pTc) = 0;
+  };
+</div>
+  <div class="comments">///////////////////////////////////////////////////////////////</div>
+  <div class="comments">// abstract base class for parser language construct detections</div>
+  <div class="comments">//   - rules are registered with the parser for use</div>
+
+  class IRule
+  <div class ="classes">{
+  public:
+    static const bool Continue = true;
+    static const bool Stop = false;
+    virtual ~IRule() <div class ="function">{}</div>
+    void addAction(IAction* pAction);
+    void doActions(const Lexer::ITokenCollection* pTc);
+    virtual bool doTest(const Lexer::ITokenCollection* pTc) = 0;
+  protected:
+    std::vector&lt;IAction*&gt; actions;
+  };
+</div>
+  class Parser
+  <div class ="classes">{
+  public:
+    Parser(Lexer::ITokenCollection* pTokCollection);
+    ~Parser();
+    void addRule(IRule* pRule);
+    bool parse();
+    bool next();
+  private:
+    Lexer::ITokenCollection* pTokColl;
+    std::vector&lt;IRule*&gt; rules;
+  };
+</div>
+  inline Parser::Parser(Lexer::ITokenCollection* pTokCollection) : pTokColl(pTokCollection) <div class ="function">{}</div>
+
+  inline Parser::~Parser() <div class ="function">{}</div>
+}
+#endif
+    </pre>
+  </body>
+</html>

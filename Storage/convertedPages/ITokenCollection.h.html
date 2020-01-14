@@ -1,0 +1,80 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>ITokenCollection.h</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+﻿#ifndef ITOKENCOLLECTION_H
+#define ITOKENCOLLECTION_H
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">// ITokenCollection.h - Lexical Scanner interface                  //</div>
+<div class="comments">// ver 1.0   grammatical analysis                                  //</div>
+<div class="comments">//                                                                 //</div>
+<div class="comments">// Jim Fawcett, CSE687 - Object Oriented Design, Spring 2019       //</div>
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+
+#include &lt;string&gt;
+#include &lt;vector&gt;
+
+namespace Lexer
+{
+  using Token = std::string;
+  using TokColl = std::vector&lt;std::string&gt;;
+
+  class Toker;
+
+  struct ITokenCollection
+  {
+    using iterator = std::vector&lt;std::string&gt;::iterator;
+    virtual Toker* getToker() = 0;
+    virtual void setToker(Toker* pToker) = 0;
+    virtual bool open(const std::string& src) = 0;        <div class="comments">// attach toker to source</div>
+    virtual void close() = 0;                             <div class="comments">// close toker's source</div>
+    virtual bool get() = 0;                               <div class="comments">// collect semi</div>
+    virtual void clone(const ITokenCollection& tc, size_t offset = 0) = 0;  <div class="comments">// invoker clones tc</div>
+    virtual ITokenCollection* clone() const = 0;          <div class="comments">// returns pointer to newly allocated clone</div>
+    virtual size_t size() const = 0;                      <div class="comments">// number of tokens</div>
+    virtual Token& operator[](size_t n) = 0;              <div class="comments">// index semi</div>
+    virtual Token operator[](size_t n) const = 0;         <div class="comments">// index semi</div>
+    virtual iterator begin() = 0;                         <div class="comments">// iterator start</div>
+    virtual iterator end() = 0;                           <div class="comments">// iterator end</div>
+    virtual ITokenCollection* add(Token token) = 0;       <div class="comments">// add a token to collection</div>
+    virtual bool remove(size_t index) = 0;                <div class="comments">// remove token at index</div>
+    virtual bool remove(Token tok) = 0;                   <div class="comments">// remove first tok</div>
+    virtual void addRange(TokColl tc) = 0;                <div class="comments">// append collection of toks to semi</div>
+    virtual bool insert(size_t n, Token tok) = 0;         <div class="comments">// insert tok at index n</div>
+    virtual void clear() = 0;                             <div class="comments">// clear all tokens</div>
+    virtual bool contains(Token token) const = 0;         <div class="comments">// has token?</div>
+    virtual bool find(Token tok, size_t& index, size_t offset = 0) const = 0;  <div class="comments">// find tok if in semi</div>
+    virtual bool findLast(Token tok, size_t&index) const = 0;
+    virtual Token last() const = 0;                       <div class="comments">// return last token in semi</div>
+    virtual void trim() = 0;                              <div class="comments">// remove leading whitespace</div>
+    virtual Token predecessor(Token tok) = 0;             <div class="comments">// find token before tok</div>
+    virtual bool hasSequence(TokColl tokSeq) = 0;         <div class="comments">// does semi have this sequence of tokens?</div>
+    virtual bool hasTerminator() = 0;                     <div class="comments">// does semi have a valid terminator</div>
+    virtual bool isDone() = 0;                            <div class="comments">// at end of tokenSource?</div>
+    virtual size_t lineCount() = 0;                       <div class="comments">// get number of lines processed</div>
+    virtual std::string ToString() = 0;                   <div class="comments">// concatenate tokens with intervening spaces</div>
+    virtual std::string show() const = 0;                 <div class="comments">// display semi in string</div>
+    virtual bool isComment(Token tok) = 0;                <div class="comments">// is this token a comment?</div>
+  };
+}
+#endif
+    </pre>
+  </body>
+</html>

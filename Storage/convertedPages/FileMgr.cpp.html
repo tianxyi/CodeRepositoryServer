@@ -1,0 +1,98 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>FileMgr.cpp</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="FileMgr.h.html">FileMgr.h</a>
+    </h3><div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">// FileMgr.cpp - find files matching specified patterns            //</div>
+<div class="comments">//               on a specified path                               //</div>
+<div class="comments">// ver 2.2                                                         //</div>
+<div class="comments">// Jim Fawcett, CSE687 - Object Oriented Design, Spring 2016       //</div>
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+
+#include "FileMgr.h"
+#include &lt;iostream&gt;
+
+using namespace FileManager;
+
+IFileMgr* FileMgr::pInstance_;
+
+IFileMgr* IFileMgr::getInstance()
+<div class ="function">{
+  return FileMgr::getInstance();
+}</div>
+
+#ifdef TEST_FILEMGR
+
+using namespace FileManager;
+
+struct FileHandler : IFileEventHandler
+{
+  void execute(const std::string& fileSpec)
+  <div class ="function">{
+    std::cout &lt;&lt; "\n  --   " &lt;&lt; fileSpec;
+  }</div>
+};
+
+struct DirHandler : IDirEventHandler
+{
+  void execute(const std::string& dirSpec)
+  <div class ="function">{
+    std::cout &lt;&lt; "\n  ++ " &lt;&lt; dirSpec;
+  }</div>
+};
+
+struct DoneHandler : IDoneEventHandler
+{
+  void execute(size_t numFilesProcessed)
+  <div class ="function">{
+    std::cout &lt;&lt; "\n\n  Processed " &lt;&lt; numFilesProcessed &lt;&lt; " files";
+  }</div>
+};
+int main()
+<div class ="function">{
+  std::cout &lt;&lt; "\n  Testing FileMgr";
+  std::cout &lt;&lt; "\n =================";
+
+  std::string path = FileSystem::Path::getFullFileSpec("..");
+  IFileMgr* pFmgr = FileMgrFactory::create(path);
+
+  FileHandler fh;
+  DirHandler dh;
+  DoneHandler dnh;
+
+  pFmgr-&gt;regForFiles(&fh);
+  pFmgr-&gt;regForDirs(&dh);
+  pFmgr-&gt;regForDone(&dnh);
+
+  pFmgr-&gt;addPattern("*.h");
+  pFmgr-&gt;addPattern("*.cpp");
+  <div class="comments">//pFmgr-&gt;addPattern("*.log");</div>
+
+  pFmgr-&gt;search();
+
+  std::cout &lt;&lt; "\n\n";
+  return 0;
+}</div>
+#endif
+    </pre>
+  </body>
+</html>

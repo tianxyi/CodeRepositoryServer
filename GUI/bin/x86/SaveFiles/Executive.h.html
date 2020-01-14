@@ -1,0 +1,126 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>Executive.h</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="Executive.cpp.html">Executive.cpp</a>
+    </h3><div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">//  Executive.h  - define an interface to Publisher Project#2      //</div>
+<div class="comments">//  ver 1.0                                                        //</div>
+<div class="comments">//  Language:      Visual C++, Visual Studio 2017                  //</div>
+<div class="comments">//  Platform:      Dell G5, Windows 10							   //</div>
+<div class="comments">//  Application:   Prototype for CSE687 - OOD Projects             //</div>
+<div class="comments">//  Author:        Tianxiang Yi, Syracuse University			   //</div>
+<div class="comments">//                 (315) 278-3890, tyi100@syr.edu		           //</div>
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">/*
+*  Package Description:
+* ======================
+*  This package build a Client that porvides a Graphical User Interface(GUI)
+*  for the Code Publishr build in project#2. Because C++ standard libraries	
+*  do not provide any support for GUIs.
+*  Therefore, the implementation of the class was moved to the .cpp file
+*  leaving the .h file free of any CLR-incompatible types. However, we
+*  still need to use the C++ class in C++/CLI environment and under /CLR
+*  code. To do so, we created an interface (IPublisher shown below) that
+*  declares the methods we want the C++/CLI Shim to use. 
+*  Inheritance allows the use of an interface pointer (IPublisher*) to
+*  point into any derived class objects (Publisher).
+*  We declared an object factory that returned IPublisher*
+*  and implemented the function in the .cpp file to return Publisher*.
+*  This way, the C++/CLI translator could use Publisher through
+*  its interface.
+*
+*  Publisher is a Source Code Publisher, it converts source code file 
+* content to a Web page
+* Executive package accepts path, patterns and regular expression from
+* commandline. And it using DirExplorerN to find files to process.
+* Then it select files to process using Regex.
+* What's more, it invokes Convert Package to convert files like 
+* translating markup, inserting tag and webpage template.
+* Last, it output file in Display Package and display each processed 
+* file using Process.
+*
+*
+*  Public Interface:
+* ===================
+*  Publisher factory;
+*  IPublisher* instance = factory.createPublisher();
+*  instance-&gt;setCmd();
+*  instance-&gt;convert();
+*  std::string&lt;std::vector&gt; = instance-&gt;GetConvertedFiles();
+*
+*  Required Files:
+* =================
+* Executive.h
+* Executive.cpp
+* DirExplorer-Naive.h				 <div class="comments">// find files on path</div>
+* FileSystem.h, FileSystem.cpp       <div class="comments">// Directory and Path classes</div>
+* StringUtilities.h                  <div class="comments">// Title function</div>
+* CodeUtilities.h                    <div class="comments">// ProcessCmdLine class</div>
+* Process.h							 <div class="comments">// Display each files in window</div>
+* Convert.h						  	 <div class="comments">// Convert function</div>
+* Display.h							 <div class="comments">// Display function</div>
+* Parser.h							 <div class="comments">// Parsing file</div>
+* Toker.h
+* Semi.h
+* ScopeStack.h
+*
+* Maintenance History:
+* --------------------
+* ver 1.0 : 12 Apri 2019
+* - first release
+*
+*/</div>
+#pragma once
+
+
+
+#include &lt;vector&gt;
+#include &lt;string&gt;
+
+class IPublisher <div class ="classes">{
+public:
+	<div class="comments">//-----&lt; Setup the commandlineargument through local variable &gt;-------</div>
+	virtual void setCmd() = 0;
+	<div class="comments">//-----&lt; receive the commandlineargument from GUI &gt;-------</div>
+	virtual void setcmdd(const std::vector&lt;std::string&gt;& argv) = 0;
+	<div class="comments">//-----&lt; Demenstrate the requirement I did in Project &gt;-------</div>
+	virtual void show() = 0;
+	<div class="comments">//-----&lt; Convert file &gt;-------</div>
+	virtual void convert() = 0;
+	<div class="comments">//-----&lt; Get converted files  &gt;-------</div>
+	virtual std::vector&lt;std::string&gt; getConvertedFilesList() = 0;
+	
+	virtual ~IPublisher() <div class ="function">{};</div>
+};
+</div>
+<div class="comments">//extern "C" {</div>
+	<div class="comments">//-----&lt; Instantiates Publisher* as IPublisher  &gt;-------</div>
+	struct PublisherFactory {
+
+		 IPublisher* createPublisher();
+
+	};
+<div class="comments">//}</div>
+
+    </pre>
+  </body>
+</html>

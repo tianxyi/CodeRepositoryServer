@@ -1,0 +1,77 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>Process.cpp</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="Process.h.html">Process.h</a>
+    </h3><div class="comments">///////////////////////////////////////////////////////////////////////</div>
+<div class="comments">// Process.cpp - class used to start process                         //</div>
+<div class="comments">// ver 1.0                                                           //</div>
+<div class="comments">// Jim Fawcett, CSE687 - Object Oriented Design, Spring 2018         //</div>
+<div class="comments">///////////////////////////////////////////////////////////////////////</div>
+
+#include "Process.h"
+#include &lt;iostream&gt;
+<div class="comments">//#include &lt;windows.h&gt;</div>
+#include &lt;conio.h&gt;
+
+#ifdef TEST_PROCESS
+
+int main()
+<div class ="function">{
+	std::cout &lt;&lt; "\n  Demonstrating code pop-up in notepad";
+	std::cout &lt;&lt; "\n ======================================";
+
+	Process p;
+	p.title("test application");
+	std::string appPath = "c:/windows/system32/notepad.exe";  // path to application to start
+	p.application(appPath);
+
+	std::string cmdLine = "/A ../Process/Process.h";  // asking notepad to display Process.h
+	p.commandLine(cmdLine);
+
+	std::cout &lt;&lt; "\n  Will start notepad 5 times and each time wait for termination.";
+	std::cout &lt;&lt; "\n  You need to kill each window (upper right button) to continue.";
+	std::cout &lt;&lt; "\n  Press key to start";
+	_getche();
+
+	for (int i = 0; i &lt; 5; ++i)
+	{
+		std::cout &lt;&lt; "\n  starting process: \"" &lt;&lt; appPath &lt;&lt; "\"";
+		std::cout &lt;&lt; "\n  with this cmdlne: \"" &lt;&lt; cmdLine &lt;&lt; "\"";
+		p.create();
+		CBP callback = []() { std::cout &lt;&lt; "\n  --- child process exited with this message ---"; };
+		p.setCallBackProcessing(callback);
+		p.registerCallback();
+
+		WaitForSingleObject(p.getProcessHandle(), INFINITE);  <div class="comments">// wait for created process to terminate</div>
+	}
+
+	std::cout &lt;&lt; "\n  after OnExit";
+	std::cout.flush();
+	char ch;
+	std::cin.read(&ch, 1);
+	return 0;
+}</div>
+
+#endif
+    </pre>
+  </body>
+</html>

@@ -1,0 +1,146 @@
+<DOCTYPE !HTML>
+<html>
+  <head>
+    <Title>Logger.h</Title>
+    <style >
+      body {
+        padding:15px 40px;
+        font-family: Consolas;
+        font-size: 1.25em;
+        font-weight: normal;
+      }
+      </style>
+    <link rel="stylesheet" type="text/css" href ="style.css">
+      <script src="script.js"></script>
+  </head>
+
+  <body>
+ <div class="aaa"><button class="absolute" onclick = "toggleVisibility('comments')">Comment </button></div>
+ <div class="bbb"><button class="absolute" onclick = "toggleVisibility('classes')">Class   </button></div>
+ <div class="ccc"><button class="absolute" onclick = "toggleVisibility('function')">Function</button></div>
+    <pre>
+    <h3>Dependencies: 
+      <a href="Cpp11-BlockingQueue.h.html">Cpp11-BlockingQueue.h</a>
+      <a href="Logger.cpp.html">Logger.cpp</a>
+    </h3>#ifndef LOGGER_H
+#define LOGGER_H
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">// Logger.h - log text messages to std::ostream                    //</div>
+<div class="comments">// ver 1.2                                                         //</div>
+<div class="comments">//-----------------------------------------------------------------//</div>
+<div class="comments">// Jim Fawcett (c) copyright 2015                                  //</div>
+<div class="comments">// All rights granted provided this copyright notice is retained   //</div>
+<div class="comments">//-----------------------------------------------------------------//</div>
+<div class="comments">// Language:    C++, Visual Studio 2015                            //</div>
+<div class="comments">// Application: Several Projects, CSE687 - Object Oriented Design  //</div>
+<div class="comments">// Author:      Jim Fawcett, Syracuse University, CST 4-187        //</div>
+<div class="comments">//              jfawcett@twcny.rr.com                              //</div>
+<div class="comments">/////////////////////////////////////////////////////////////////////</div>
+<div class="comments">/*
+* Package Operations:
+* -------------------
+* This package supports logging for multiple concurrent clients to a
+* single std::ostream.  It does this be enqueuing messages in a
+* blocking queue and dequeuing with a single thread that writes to
+* the std::ostream.
+*
+* It provides two logging classes, a non-template Logger class with 
+* instance methods, and a template class StaticLogger&lt;int&gt; with static 
+* methods.
+*
+* In most of my code I use the following definitions:
+* 
+*   using Rslt = StaticLogger&lt;0&gt;;    <div class="comments">// show program results</div>
+*   using Demo = StaticLogger&lt;1&gt;;    <div class="comments">// show demonstration outputs</div>
+*   using Dbug = StaticLogger&lt;2&gt;;    <div class="comments">// show debugging outputs</div>
+*
+* That allows a user to determine the kinds of outputs the program
+* presents based on which of these loggers are started, e.g., by
+* changing only a couple of lines of code.
+*
+* Build Process:
+* --------------
+* Required Files: Logger.h, Logger.cpp, Utilities.h, Utilities.cpp
+*
+* Build Command: devenv logger.sln /rebuild debug
+*
+* Maintenance History:
+* --------------------
+* ver 1.2 : 27 Aug 2016
+* - added flushing of streams in Logger::flush()
+* - call thread join on stop instead of spin locking
+* ver 1.1 : 06 Aug 2016
+* - added member function flush() to wait for output to complete
+* ver 1.0 : 22 Feb 2016
+* - first release
+*
+* Planned Additions and Changes:
+* ------------------------------
+* - fix pause locking
+*/</div>
+
+#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include &lt;vector&gt;
+#include &lt;thread&gt;
+#include "../Cpp11-BlockingQueue/Cpp11-BlockingQueue.h"
+
+namespace Logging
+{
+  class Logger
+  <div class ="classes">{
+  public:
+    Logger() <div class ="function">{}</div>
+    void attach(std::ostream* pOut);
+    void start();
+    bool running();
+    void pause(bool doPause);
+    bool paused();
+    void flush();
+    void stop(const std::string& msg = "");
+    void wait();
+    void write(const std::string& msg);
+    void title(const std::string& msg, char underline = '-');
+    ~Logger();
+    Logger(const Logger&) = delete;
+    Logger& operator=(const Logger&) = delete;
+  private:
+    std::thread* _pThr;
+    std::vector&lt;std::ostream*&gt; streams_;
+    Async::BlockingQueue&lt;std::string&gt; _queue;
+    bool _ThreadRunning = false;
+    bool _Paused = false;
+  };
+</div>
+  template&lt;int i&gt;
+  class StaticLogger
+  <div class ="classes">{
+  public:
+    static void attach(std::ostream* pOut) <div class ="function">{ _logger.attach(pOut); }</div>
+    static void start() <div class ="function">{ _logger.start(); }</div>
+    static bool running() <div class ="function">{ return _logger.running(); }</div>
+    static void pause(bool doPause) <div class ="function">{ _logger.pause(doPause); }</div>
+    static void paused() <div class ="function">{ return _logger.paused(); }</div>
+    static void flush() <div class ="function">{ _logger.flush(); }</div>
+    static void stop(const std::string& msg = "") <div class ="function">{ _logger.stop(msg); }</div>
+    static void wait() <div class ="function">{ _logger.wait(); }</div>
+    static void write(const std::string& msg) <div class ="function">{ _logger.write(msg); }</div>
+    static void title(const std::string& msg, char underline = '-') <div class ="function">{ _logger.title(msg, underline); }</div>
+    static Logger& instance() <div class ="function">{ return _logger; }</div>
+    StaticLogger(const StaticLogger&) = delete;
+    StaticLogger& operator=(const StaticLogger&) = delete;
+  private:
+    static Logger _logger;
+  };
+</div>
+  template&lt;int i&gt;
+  Logger StaticLogger&lt;i&gt;::_logger;
+
+  using Rslt = Logging::StaticLogger&lt;0&gt;;
+  using Demo = Logging::StaticLogger&lt;1&gt;;
+  using Dbug = Logging::StaticLogger&lt;2&gt;;
+}
+#endif
+    </pre>
+  </body>
+</html>
